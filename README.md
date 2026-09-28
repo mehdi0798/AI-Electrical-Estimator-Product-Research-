@@ -1,4 +1,4 @@
-<h1 align="center">Unlisted</h1>
+<h1 align="center">Verification Scoping: How Confidence-Ranked Review Lists Hide AI Omission Errors in Electrical Cost Estimating, and How to Design the Human Review Against It</h1>
 
 <p align="center"><b>Find what the AI didn't list.</b></p>
 
