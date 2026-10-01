@@ -1,7 +1,7 @@
 # Project brief for Claude Code
 
 ## Current status
-v0.1 steps 1–5 DONE. Next: step 6.
+v0.1 steps 1–5 and 6a DONE. Step 6b (deploy) in progress.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
