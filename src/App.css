@@ -28,6 +28,23 @@
   color: #6b7280;
   font-size: 0.9rem;
 }
+.bid {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.bid-label {
+  color: #6b7280;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bid-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Two-pane layout */
 .layout {
@@ -88,6 +105,18 @@
   gap: 1rem;
   padding: 0.6rem 1rem;
   border-bottom: 1px solid #f1f2f4;
+  cursor: pointer;
+}
+/* Row highlight — visual only in v0.1 */
+.item-row.selected {
+  background: #eef4ff;
+}
+/* Rejected rows stay visible but read as struck-through */
+.item-row.rejected .item-type,
+.item-row.rejected .item-room,
+.item-row.rejected .item-price {
+  text-decoration: line-through;
+  color: #9ca3af;
 }
 .item-main {
   min-width: 0;
@@ -112,4 +141,37 @@
   font-variant-numeric: tabular-nums;
   min-width: 72px;
   text-align: right;
+}
+
+/* Accept / reject buttons */
+.item-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+.act {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.act:hover {
+  border-color: #9ca3af;
+}
+.act.accept.active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+.act.reject.active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
 }
