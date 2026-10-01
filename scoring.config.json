@@ -1,0 +1,4 @@
+{
+  "_note": "PLACEHOLDER radius, not yet decided. Set before the first real session (CLAUDE.md, Open settings). Distance is in ORIGINAL IMAGE PIXELS; an add_missing within this distance of a deleted item counts as catching it.",
+  "radius": 40
+}

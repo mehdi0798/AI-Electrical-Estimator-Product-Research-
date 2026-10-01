@@ -1,0 +1,26 @@
+id,session_label,participant,sheet,action,item_id,x,y,old_value,new_value,client_ts,server_ts
+1,fix1,A,practice,session_started,,,,,A,1000,2026-10-01T10:00:00Z
+2,fix1,A,practice,rejected,P-1,,,,rejected,1010,2026-10-01T10:00:01Z
+3,fix1,A,sheet1,sheet_opened,sheet1,,,,,2000,2026-10-01T10:01:00Z
+4,fix1,A,sheet1,rejected,S1-4,,,,rejected,2100,2026-10-01T10:01:01Z
+5,fix1,A,sheet1,rejected,S1-7,,,,rejected,2200,2026-10-01T10:01:02Z
+6,fix1,A,sheet1,accepted,S1-7,,,rejected,accepted,2300,2026-10-01T10:01:03Z
+7,fix1,A,sheet1,rejected,S1-1,,,,rejected,2400,2026-10-01T10:01:04Z
+8,fix1,A,sheet1,rejected,S1-2,,,,rejected,2500,2026-10-01T10:01:05Z
+9,fix1,A,sheet1,rejected,S1-2,,,rejected,,2600,2026-10-01T10:01:06Z
+10,fix1,A,sheet1,add_missing,ADD-sheet1-1,1010,505,,"Duplex, Receptacle",2700,2026-10-01T10:01:07Z
+11,fix1,A,sheet1,add_missing,ADD-sheet1-2,2005,802,,Exit Sign,2800,2026-10-01T10:01:08Z
+12,fix1,A,sheet1,add_removed,ADD-sheet1-2,,,,,2900,2026-10-01T10:01:09Z
+13,fix1,A,sheet1,add_missing,ADD-sheet1-3,1500,1500,,Wall Pack,3000,2026-10-01T10:01:10Z
+14,fix1,A,sheet1,submitted,sheet1,,,,400,3100,2026-10-01T10:01:11Z
+15,fix1,A,sheet1,cancelled,sheet1,,,,400,3200,2026-10-01T10:01:12Z
+16,fix1,A,sheet1,add_missing,ADD-sheet1-4,1030,500,,Exit Sign,3300,2026-10-01T10:01:13Z
+17,fix1,A,sheet1,submitted,sheet1,,,,410.5,3400,2026-10-01T10:01:14Z
+18,fix1,A,sheet1,confirmed,sheet1,,,,410.5,3500,2026-10-01T10:01:15Z
+19,fix1,A,sheet2,sheet_opened,sheet2,,,,,4000,2026-10-01T10:02:00Z
+20,fix1,A,sheet2,add_missing,ADD-sheet2-1,510,500,,Junction Box,4100,2026-10-01T10:02:01Z
+21,fix1,A,sheet2,confirmed,sheet2,,,,300,4200,2026-10-01T10:02:02Z
+22,fix1,A,sheet3,sheet_opened,sheet3,,,,,5000,2026-10-01T10:03:00Z
+23,fix1,B,sheet2,sheet_opened,sheet2,,,,,6000,2026-10-01T10:10:00Z
+24,fix1,B,sheet2,rejected,S2-3,,,,rejected,6100,2026-10-01T10:10:01Z
+25,fix1,B,sheet2,add_missing,ADD-sheet2-1,500,545,,Junction Box,6200,2026-10-01T10:10:02Z

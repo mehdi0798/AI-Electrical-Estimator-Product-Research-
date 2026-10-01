@@ -1,0 +1,285 @@
+// Tests for the scoring script, using a FAKE fixture (scripts/test/fixtures/).
+// Run:  node scripts/score.test.js
+// No test framework; any failed assertion throws and exits non-zero.
+
+import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import {
+  manipulationsCsv,
+  parseCsv,
+  parseEvents,
+  scoreAll,
+  scoreSheet,
+  validateConfig,
+  validateKey,
+} from './score-lib.js'
+
+const here = dirname(fileURLToPath(import.meta.url))
+const fixtures = join(here, 'test', 'fixtures')
+const RADIUS = 40
+
+let passed = 0
+function test(name, fn) {
+  try {
+    fn()
+    passed++
+    console.log(`  ok   ${name}`)
+  } catch (err) {
+    console.error(`  FAIL ${name}`)
+    throw err
+  }
+}
+
+// --- load the fixture ---
+const events = parseEvents(readFileSync(join(fixtures, 'events.csv'), 'utf8'))
+const keys = new Map()
+for (const f of readdirSync(join(fixtures, 'answer-key'))) {
+  keys.set(
+    f.replace(/\.key\.json$/, ''),
+    validateKey(JSON.parse(readFileSync(join(fixtures, 'answer-key', f), 'utf8')), f),
+  )
+}
+const { results, skipped } = scoreAll(events, keys, RADIUS)
+const get = (participant, sheet) =>
+  results.find((r) => r.participant === participant && r.sheet === sheet)
+
+console.log('csv + config')
+
+test('parseCsv handles quotes, escaped quotes, embedded newline, CRLF and BOM', () => {
+  const rows = parseCsv('﻿a,b\r\n"x,y","he said ""hi"""\r\n"line1\nline2",z\r\n')
+  assert.deepEqual(rows, [
+    ['a', 'b'],
+    ['x,y', 'he said "hi"'],
+    ['line1\nline2', 'z'],
+  ])
+})
+
+test('parseEvents rejects a CSV with a missing column', () => {
+  assert.throws(() => parseEvents('session_label,participant\nx,y\n'), /missing required/)
+})
+
+test('validateConfig requires a positive numeric radius (no default)', () => {
+  assert.deepEqual(validateConfig({ radius: 40 }), { radius: 40 })
+  for (const bad of [{}, { radius: 0 }, { radius: -5 }, { radius: '40' }, { radius: NaN }, null]) {
+    assert.throws(() => validateConfig(bad), /radius/)
+  }
+})
+
+console.log('fixture scoring')
+
+test('practice events are ignored; sheets with no key are skipped and reported', () => {
+  assert.ok(results.every((r) => r.sheet !== 'practice'))
+  assert.deepEqual(skipped, [{ session: 'fix1', participant: 'A', sheet: 'sheet3' }])
+  assert.equal(results.length, 3) // A/sheet1, A/sheet2, B/sheet2
+})
+
+test('OVER: reject -> caught; reject then re-accept -> missed', () => {
+  const a1 = get('A', 'sheet1')
+  const byId = Object.fromEntries(a1.overs.map((o) => [o.m.id, o.caught]))
+  assert.equal(byId['S1-4'], true) // rejected, left rejected
+  assert.equal(byId['S1-7'], false) // rejected, then accepted again
+})
+
+test('real items rejected: counts final rejects, not phantoms or toggled-off rows', () => {
+  // S1-1 stays rejected; S1-2 was rejected then toggled back to untouched
+  // (logged as action "rejected" with new_value empty); S1-4 is a phantom.
+  assert.deepEqual(get('A', 'sheet1').realRejected, ['S1-1'])
+})
+
+test('UNDER: an add near a deleted item catches it', () => {
+  const u1 = get('A', 'sheet1').unders.find((u) => u.m.id === 'U1')
+  assert.equal(u1.caught, true)
+  assert.equal(u1.byAdd, 'ADD-sheet1-1') // 11.2px away; also proves the quoted-comma field parsed
+})
+
+test('UNDER: add then remove -> not caught, and not counted as an unmatched click', () => {
+  const a1 = get('A', 'sheet1')
+  assert.equal(a1.unders.find((u) => u.m.id === 'U2').caught, false)
+  const removed = a1.addReport.find((a) => a.id === 'ADD-sheet1-2')
+  assert.equal(removed.removed, true)
+  assert.ok(!a1.unmatchedAdds.some((a) => a.id === 'ADD-sheet1-2'))
+})
+
+test('add outside the radius: not caught, distance to nearest deleted item reported', () => {
+  const far = get('A', 'sheet1').addReport.find((a) => a.id === 'ADD-sheet1-3')
+  assert.equal(far.matchedId, null)
+  assert.equal(far.nearestId, 'U2')
+  assert.ok(Math.abs(far.nearestDist - Math.hypot(500, 700)) < 1e-9)
+
+  // Participant B's add at (500,545) is 45px from U3: just outside radius 40.
+  const b = get('B', 'sheet2')
+  const add = b.addReport[0]
+  assert.equal(add.nearestId, 'U3')
+  assert.equal(add.nearestDist, 45)
+  assert.equal(add.matchedId, null)
+  assert.equal(b.unders.find((u) => u.m.id === 'U3').caught, false)
+})
+
+test('a second add near an already-caught item matches nothing (one-to-one)', () => {
+  const dup = get('A', 'sheet1').addReport.find((a) => a.id === 'ADD-sheet1-4')
+  assert.equal(dup.matchedId, null)
+  assert.equal(dup.duplicateOf, 'U1') // within radius of U1, but U1 already caught by a nearer add
+})
+
+test('unmatched add_missing clicks per sheet', () => {
+  // ADD-sheet1-3 (far) and ADD-sheet1-4 (duplicate); ADD-sheet1-2 was removed.
+  assert.deepEqual(
+    get('A', 'sheet1').unmatchedAdds.map((a) => a.id),
+    ['ADD-sheet1-3', 'ADD-sheet1-4'],
+  )
+  assert.equal(get('A', 'sheet2').unmatchedAdds.length, 0)
+  assert.equal(get('B', 'sheet2').unmatchedAdds.length, 1)
+})
+
+test('one add between two close deleted items matches only the nearest', () => {
+  // Add at (510,500): 10px from U3, 20px from U4 (both inside radius 40).
+  const a2 = get('A', 'sheet2')
+  assert.equal(a2.addReport[0].matchedId, 'U3')
+  assert.equal(a2.unders.find((u) => u.m.id === 'U3').caught, true)
+  assert.equal(a2.unders.find((u) => u.m.id === 'U4').caught, false)
+})
+
+test('final confirmed bid is the last confirmed new_value; none if never confirmed', () => {
+  assert.equal(get('A', 'sheet1').confirmedBid, 410.5) // submitted 400 + cancelled earlier
+  assert.equal(get('A', 'sheet2').confirmedBid, 300)
+  const b = get('B', 'sheet2')
+  assert.equal(b.confirmedBid, null)
+  assert.ok(b.warnings.some((w) => /never confirmed/.test(w)))
+})
+
+test('OVER for participant B: reject -> caught, other phantom untouched -> missed', () => {
+  const b = get('B', 'sheet2')
+  assert.deepEqual(
+    b.overs.map((o) => [o.m.id, o.caught]),
+    [
+      ['S2-3', true],
+      ['S2-8', false],
+    ],
+  )
+})
+
+console.log('geometry')
+
+test('radius boundary is inclusive (3-4-5 triangle, radius 5)', () => {
+  const key = {
+    manipulations: [{ id: 'U', direction: 'UNDER', x: 0, y: 0, cost: 1, pair_id: 'p' }],
+  }
+  const ev = [{ client_ts: 1, action: 'add_missing', item_id: 'ADD-s-1', x: 3, y: 4, new_value: 't' }]
+  assert.equal(scoreSheet(ev, key, 5).unders[0].caught, true)
+  assert.equal(scoreSheet(ev, key, 4.99).unders[0].caught, false)
+})
+
+test('events are replayed by client_ts, not file order', () => {
+  const key = { manipulations: [{ id: 'S-1', direction: 'OVER', x: 0, y: 0, cost: 1, pair_id: 'p' }] }
+  const ev = [
+    { client_ts: 20, action: 'accepted', item_id: 'S-1', old_value: 'rejected', new_value: 'accepted' },
+    { client_ts: 10, action: 'rejected', item_id: 'S-1', old_value: null, new_value: 'rejected' },
+  ]
+  assert.equal(scoreSheet(ev, key, 40).overs[0].caught, false)
+})
+
+console.log('output + CLI')
+
+test('manipulations CSV: one row per manipulation with the required columns', () => {
+  const csv = manipulationsCsv(results)
+  const rows = parseCsv(csv)
+  assert.deepEqual(rows[0], [
+    'participant',
+    'session',
+    'sheet',
+    'manipulation_id',
+    'direction',
+    'pair_id',
+    'cost',
+    'caught',
+  ])
+  assert.equal(rows.length, 1 + 4 * 3) // 4 manipulations x 3 scored sheets
+  assert.deepEqual(rows.slice(1, 5), [
+    ['A', 'fix1', 'sheet1', 'S1-4', 'OVER', 'P1', '86', 'true'],
+    ['A', 'fix1', 'sheet1', 'S1-7', 'OVER', 'P2', '58', 'false'],
+    ['A', 'fix1', 'sheet1', 'U1', 'UNDER', 'P1', '18.5', 'true'],
+    ['A', 'fix1', 'sheet1', 'U2', 'UNDER', 'P2', '48', 'false'],
+  ])
+})
+
+test('CLI runs end to end on the fixture and writes the CSV', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'score-test-'))
+  try {
+    const cfg = join(dir, 'cfg.json')
+    const out = join(dir, 'out.csv')
+    writeFileSync(cfg, JSON.stringify({ radius: RADIUS }))
+    const run = spawnSync(
+      process.execPath,
+      [
+        join(here, 'score.js'),
+        join(fixtures, 'events.csv'),
+        '--config', cfg,
+        '--key-dir', join(fixtures, 'answer-key'),
+        '--out', out,
+      ],
+      { encoding: 'utf8' },
+    )
+    assert.equal(run.status, 0, run.stderr)
+    assert.match(run.stdout, /Scoring radius: 40 image pixels/)
+    assert.match(run.stdout, /nearest deleted U2 at 860\.2px/)
+    assert.match(run.stdout, /nearest deleted U3 at 45\.0px/)
+    assert.match(run.stdout, /Real items rejected: 1/)
+    // OVER: A/sheet1 1 + A/sheet2 0 + B/sheet2 1. UNDER: A/sheet1 1 + A/sheet2 1 + B 0.
+    assert.match(run.stdout, /OVER caught:  2\/6/)
+    assert.match(run.stdout, /UNDER caught: 2\/6/)
+    assert.match(run.stdout, /Skipped \(no answer key\).*sheet3/)
+    assert.equal(readFileSync(out, 'utf8'), manipulationsCsv(results))
+
+    // --session filter: an unknown session scores nothing.
+    const none = spawnSync(
+      process.execPath,
+      [
+        join(here, 'score.js'),
+        join(fixtures, 'events.csv'),
+        '--session', 'nope',
+        '--config', cfg,
+        '--key-dir', join(fixtures, 'answer-key'),
+        '--out', join(dir, 'none.csv'),
+      ],
+      { encoding: 'utf8' },
+    )
+    assert.equal(none.status, 0, none.stderr)
+    assert.match(none.stdout, /OVER caught:  0\/0/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('CLI refuses to run when the config has no radius', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'score-test-'))
+  try {
+    const cfg = join(dir, 'cfg.json')
+    writeFileSync(cfg, JSON.stringify({ _note: 'no radius here' }))
+    const run = spawnSync(
+      process.execPath,
+      [
+        join(here, 'score.js'),
+        join(fixtures, 'events.csv'),
+        '--config', cfg,
+        '--key-dir', join(fixtures, 'answer-key'),
+        '--out', join(dir, 'out.csv'),
+      ],
+      { encoding: 'utf8' },
+    )
+    assert.notEqual(run.status, 0)
+    assert.match(run.stderr, /radius/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('the committed scoring.config.json is valid', () => {
+  const cfg = JSON.parse(readFileSync(resolve(here, '..', 'scoring.config.json'), 'utf8'))
+  validateConfig(cfg)
+})
+
+console.log(`\n${passed} tests passed`)
