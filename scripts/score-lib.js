@@ -97,6 +97,90 @@ export function parseEvents(csvText) {
   }))
 }
 
+// --- Cleaning and run-level checks ------------------------------------------
+
+// Drop rows that are exact duplicates of an earlier row: same session, participant,
+// sheet, action, item_id, x, y, old_value, new_value AND client_ts. (The row id and
+// server_ts are not compared.) Rows that differ even by 1 ms in client_ts are kept.
+export function dedupeEvents(events) {
+  const seen = new Set()
+  const kept = []
+  for (const e of events) {
+    const key = JSON.stringify([
+      e.session, e.participant, e.sheet, e.action, e.item_id,
+      e.x, e.y, e.old_value, e.new_value, e.client_ts,
+    ])
+    if (seen.has(key)) continue
+    seen.add(key)
+    kept.push(e)
+  }
+  return { events: kept, dropped: events.length - kept.length }
+}
+
+// Session labels present in the events, with event counts. A blank label shows as "(blank)".
+export function sessionLabelCounts(events) {
+  const counts = new Map()
+  for (const e of events) {
+    const label = e.session ?? '(blank)'
+    counts.set(label, (counts.get(label) ?? 0) + 1)
+  }
+  return [...counts]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+// Message for `--session X` when X matches no events.
+export function noSessionMessage(session, events) {
+  const lines = [`no events found for session label ${JSON.stringify(session)}.`]
+  const counts = sessionLabelCounts(events)
+  lines.push('Session labels in this file:')
+  if (counts.length === 0) lines.push('  (the file has no events)')
+  for (const c of counts) lines.push(`  ${c.label}  (${c.count} events)`)
+  lines.push('No output written.')
+  return lines.join('\n')
+}
+
+// Message for when events were found but no sheet could be scored (only practice,
+// or only sheets with no answer key).
+export function nothingScoredMessage({ session, events, keys }) {
+  const selected = session !== null ? events.filter((e) => e.session === session) : events
+  const sheets = [...new Set(selected.map((e) => e.sheet ?? '(blank)'))].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  )
+  const describe = (s) =>
+    s === 'practice' ? 'practice (never scored)' : keys.has(s) ? s : `${s} (no answer key)`
+  const scope = session !== null ? `session ${JSON.stringify(session)}` : 'this file'
+  return [
+    `${scope} has ${selected.length} events but no sheet could be scored.`,
+    `Sheets seen: ${sheets.map(describe).join(', ') || '(none)'}`,
+    `Answer keys loaded for: ${[...keys.keys()].sort().join(', ') || '(none)'}`,
+    'No output written.',
+  ].join('\n')
+}
+
+// Run-level warnings: a session_started logged more than once for the same session
+// and participant means the session was restarted, reloaded, or open in two tabs, so
+// events from separate runs are mixed together.
+export function runWarnings(events, { session = null } = {}) {
+  const starts = new Map()
+  for (const e of events) {
+    if (e.action !== 'session_started') continue
+    if (session !== null && e.session !== session) continue
+    const k = JSON.stringify([e.session, e.participant])
+    starts.set(k, (starts.get(k) ?? 0) + 1)
+  }
+  const out = []
+  for (const [k, n] of starts) {
+    if (n <= 1) continue
+    const [s, p] = JSON.parse(k)
+    out.push(
+      `session ${s ?? '(blank)'} | participant ${p ?? '(blank)'}: session_started logged ${n} times ` +
+        '(restart, reload or a second tab; events from separate runs are mixed)',
+    )
+  }
+  return out
+}
+
 // --- Config and key validation ----------------------------------------------
 
 // RADIUS has no default in code: it must be set in scoring.config.json.
@@ -199,6 +283,16 @@ export function scoreSheet(events, key, radius) {
 
   if (opened > 1) {
     warnings.push(`sheet opened ${opened} times (page reload?) - check this session by hand`)
+  }
+  const addUses = new Map()
+  for (const a of adds) addUses.set(a.id, (addUses.get(a.id) ?? 0) + 1)
+  for (const [id, n] of addUses) {
+    if (n > 1) {
+      warnings.push(
+        `${id} used by ${n} add_missing events (id reused: two tabs or a restart); ` +
+          'each is scored, but an add_removed may match the wrong one',
+      )
+    }
   }
   if (confirmedCount === 0) warnings.push('sheet was never confirmed')
 
@@ -349,9 +443,14 @@ export function manipulationsCsv(results) {
 const px = (d) => (d === null ? 'n/a' : `${d.toFixed(1)}px`)
 
 // Human-readable report for the terminal.
-export function formatReport(results, skipped, radius) {
+export function formatReport(results, skipped, radius, { dropped = 0, runWarnings = [] } = {}) {
   const out = []
   out.push(`Scoring radius: ${radius} image pixels (from scoring config)`)
+  out.push(`Exact duplicate rows dropped: ${dropped}`)
+  if (runWarnings.length) {
+    out.push('Run warnings:')
+    for (const w of runWarnings) out.push(`  WARNING: ${w}`)
+  }
   out.push('')
 
   let overCaught = 0

@@ -4,14 +4,16 @@
 
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  dedupeEvents,
   manipulationsCsv,
   parseCsv,
   parseEvents,
+  runWarnings,
   scoreAll,
   scoreSheet,
   validateConfig,
@@ -35,7 +37,10 @@ function test(name, fn) {
 }
 
 // --- load the fixture ---
-const events = parseEvents(readFileSync(join(fixtures, 'events.csv'), 'utf8'))
+// Row 26 is an exact copy of row 24 (only the row id and server_ts differ), so
+// scoring runs on the deduplicated events, as the CLI does.
+const rawEvents = parseEvents(readFileSync(join(fixtures, 'events.csv'), 'utf8'))
+const { events, dropped } = dedupeEvents(rawEvents)
 const keys = new Map()
 for (const f of readdirSync(join(fixtures, 'answer-key'))) {
   keys.set(
@@ -67,6 +72,52 @@ test('validateConfig requires a positive numeric radius (no default)', () => {
   for (const bad of [{}, { radius: 0 }, { radius: -5 }, { radius: '40' }, { radius: NaN }, null]) {
     assert.throws(() => validateConfig(bad), /radius/)
   }
+})
+
+console.log('cleaning and warnings')
+
+test('dedupe drops exact duplicate rows and reports how many', () => {
+  assert.equal(dropped, 1) // row 26 only
+  assert.equal(events.length, rawEvents.length - 1)
+  // The first copy (file line 25, row id 24) is kept; the later copy (id 26) is dropped.
+  assert.ok(events.some((e) => e.action === 'rejected' && e.item_id === 'S2-3'))
+  assert.equal(events.filter((e) => e.action === 'rejected' && e.item_id === 'S2-3').length, 1)
+})
+
+test('dedupe keeps rows that differ in any compared field, even by 1 ms', () => {
+  const base = {
+    session: 's', participant: 'A', sheet: 'sheet1', action: 'accepted', item_id: 'i',
+    x: null, y: null, old_value: null, new_value: 'accepted', client_ts: 100,
+  }
+  const same = { ...base, row: 9 } // row number is not compared
+  assert.equal(dedupeEvents([base, same]).dropped, 1)
+  assert.equal(dedupeEvents([base, { ...base, client_ts: 101 }]).dropped, 0)
+  assert.equal(dedupeEvents([base, { ...base, x: 0 }]).dropped, 0) // null is not 0
+  assert.equal(dedupeEvents([base, { ...base, participant: 'B' }]).dropped, 0)
+  assert.equal(dedupeEvents([base, { ...base, session: 't' }]).dropped, 0)
+})
+
+test('runWarnings flags a session started more than once (restart or second tab)', () => {
+  const start = (session, participant) => ({ action: 'session_started', session, participant })
+  const w = runWarnings([start('mytest', 'A'), start('mytest', 'A'), start('other', 'A')])
+  assert.equal(w.length, 1)
+  assert.match(w[0], /session mytest \| participant A: session_started logged 2 times/)
+  // The --session filter limits the check to that session.
+  assert.equal(runWarnings([start('mytest', 'A'), start('mytest', 'A')], { session: 'other' }).length, 0)
+  // Different participants in one session are not a restart.
+  assert.equal(runWarnings([start('mytest', 'A'), start('mytest', 'B')]).length, 0)
+})
+
+test('a reused ADD id is flagged on the sheet', () => {
+  const key = { manipulations: [{ id: 'U', direction: 'UNDER', x: 0, y: 0, cost: 1, pair_id: 'p' }] }
+  const ev = [
+    { client_ts: 1, action: 'add_missing', item_id: 'ADD-sheet1-1', x: 73, y: 22, new_value: 't' },
+    { client_ts: 2, action: 'add_missing', item_id: 'ADD-sheet1-1', x: 60, y: 57, new_value: 't' },
+    { client_ts: 3, action: 'add_missing', item_id: 'ADD-sheet1-2', x: 9, y: 9, new_value: 't' },
+  ]
+  const warnings = scoreSheet(ev, key, 40).warnings
+  assert.ok(warnings.some((w) => /ADD-sheet1-1 used by 2 add_missing/.test(w)))
+  assert.ok(!warnings.some((w) => /ADD-sheet1-2/.test(w)))
 })
 
 console.log('fixture scoring')
@@ -225,6 +276,7 @@ test('CLI runs end to end on the fixture and writes the CSV', () => {
     )
     assert.equal(run.status, 0, run.stderr)
     assert.match(run.stdout, /Scoring radius: 40 image pixels/)
+    assert.match(run.stdout, /Exact duplicate rows dropped: 1/)
     assert.match(run.stdout, /nearest deleted U2 at 860\.2px/)
     assert.match(run.stdout, /nearest deleted U3 at 45\.0px/)
     assert.match(run.stdout, /Real items rejected: 1/)
@@ -234,23 +286,75 @@ test('CLI runs end to end on the fixture and writes the CSV', () => {
     assert.match(run.stdout, /Skipped \(no answer key\).*sheet3/)
     assert.equal(readFileSync(out, 'utf8'), manipulationsCsv(results))
 
-    // --session filter: an unknown session scores nothing.
-    const none = spawnSync(
+    // --session filter: a known session scores only that session.
+    const only = spawnSync(
       process.execPath,
       [
         join(here, 'score.js'),
         join(fixtures, 'events.csv'),
-        '--session', 'nope',
+        '--session', 'fix1',
         '--config', cfg,
         '--key-dir', join(fixtures, 'answer-key'),
-        '--out', join(dir, 'none.csv'),
+        '--out', join(dir, 'only.csv'),
       ],
       { encoding: 'utf8' },
     )
-    assert.equal(none.status, 0, none.stderr)
-    assert.match(none.stdout, /OVER caught:  0\/0/)
+    assert.equal(only.status, 0, only.stderr)
+    assert.match(only.stdout, /OVER caught:  2\/6/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Run the CLI on the fixture with extra args; returns { run, out, cleanup }.
+function runCli(extraArgs) {
+  const dir = mkdtempSync(join(tmpdir(), 'score-test-'))
+  const cfg = join(dir, 'cfg.json')
+  const out = join(dir, 'out.csv')
+  writeFileSync(cfg, JSON.stringify({ radius: RADIUS }))
+  const run = spawnSync(
+    process.execPath,
+    [
+      join(here, 'score.js'),
+      join(fixtures, 'events.csv'),
+      ...extraArgs,
+      '--config', cfg,
+      '--key-dir', join(fixtures, 'answer-key'),
+      '--out', out,
+    ],
+    { encoding: 'utf8' },
+  )
+  return { run, out, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+}
+
+test('--session that matches nothing: clear message, lists labels found, writes nothing', () => {
+  const { run, out, cleanup } = runCli(['--session', 'nope'])
+  try {
+    assert.equal(run.status, 1)
+    assert.match(run.stderr, /no events found for session label "nope"/)
+    assert.match(run.stderr, /Session labels in this file:/)
+    // Counts are after exact-duplicate removal: fix1 = 25 (row 26 dropped).
+    assert.match(run.stderr, /fix1\s+\(25 events\)/)
+    assert.match(run.stderr, /fix2\s+\(2 events\)/)
+    assert.match(run.stderr, /\(blank\)\s+\(2 events\)/)
+    assert.doesNotMatch(run.stdout, /0\/0/) // not the old silent zero report
+    assert.equal(existsSync(out), false) // no output CSV written
+  } finally {
+    cleanup()
+  }
+})
+
+test('session found but nothing scorable: says so and writes nothing', () => {
+  // fix2 only has practice events, which are never scored.
+  const { run, out, cleanup } = runCli(['--session', 'fix2'])
+  try {
+    assert.equal(run.status, 1)
+    assert.match(run.stderr, /session "fix2" has 2 events but no sheet could be scored/)
+    assert.match(run.stderr, /practice \(never scored\)/)
+    assert.match(run.stderr, /Answer keys loaded for: sheet1, sheet2/)
+    assert.equal(existsSync(out), false)
+  } finally {
+    cleanup()
   }
 })
 

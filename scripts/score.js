@@ -5,16 +5,22 @@
 //
 // Reads the CSV exported from the Supabase `event_log` table, the answer keys in
 // answer-key/, and the RADIUS from scoring.config.json (there is no default in
-// code). Prints a per-participant, per-sheet report and writes one CSV row per
-// manipulation.
+// code). Drops exact duplicate rows (and says how many), prints a per-participant,
+// per-sheet report, and writes one CSV row per manipulation. A --session that
+// matches no events, or a run where nothing can be scored, exits 1 with a message
+// and writes no output.
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  dedupeEvents,
   formatReport,
   manipulationsCsv,
+  noSessionMessage,
+  nothingScoredMessage,
   parseEvents,
+  runWarnings,
   scoreAll,
   validateConfig,
   validateKey,
@@ -61,12 +67,14 @@ try {
   fail(`cannot use config ${opts.config}: ${err.message}`)
 }
 
-let events
+let rawEvents
 try {
-  events = parseEvents(readFileSync(resolve(csvPath), 'utf8'))
+  rawEvents = parseEvents(readFileSync(resolve(csvPath), 'utf8'))
 } catch (err) {
   fail(`cannot read ${csvPath}: ${err.message}`)
 }
+// Exact duplicate rows (e.g. a retried insert) are dropped before scoring.
+const { events, dropped } = dedupeEvents(rawEvents)
 
 // Answer keys: <sheet>.key.json, e.g. sheet3.key.json -> sheet "sheet3".
 const keys = new Map()
@@ -87,8 +95,21 @@ for (const f of keyFiles) {
 if (keys.size === 0) fail(`no *.key.json files found in ${opts.keyDir}`)
 
 // --- score ---
+// A --session that matches nothing is an error, not a 0/0 result.
+if (opts.session !== null && !events.some((e) => e.session === opts.session)) {
+  fail(noSessionMessage(opts.session, events))
+}
+
 const { results, skipped } = scoreAll(events, keys, radius, { session: opts.session })
-process.stdout.write(formatReport(results, skipped, radius))
+if (results.length === 0) {
+  fail(nothingScoredMessage({ session: opts.session, events, keys }))
+}
+process.stdout.write(
+  formatReport(results, skipped, radius, {
+    dropped,
+    runWarnings: runWarnings(events, { session: opts.session }),
+  }),
+)
 
 writeFileSync(opts.out, manipulationsCsv(results))
 console.log(`Wrote ${opts.out}`)

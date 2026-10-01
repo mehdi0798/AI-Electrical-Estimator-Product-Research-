@@ -24,3 +24,8 @@ id,session_label,participant,sheet,action,item_id,x,y,old_value,new_value,client
 23,fix1,B,sheet2,sheet_opened,sheet2,,,,,6000,2026-10-01T10:10:00Z
 24,fix1,B,sheet2,rejected,S2-3,,,,rejected,6100,2026-10-01T10:10:01Z
 25,fix1,B,sheet2,add_missing,ADD-sheet2-1,500,545,,Junction Box,6200,2026-10-01T10:10:02Z
+26,fix1,B,sheet2,rejected,S2-3,,,,rejected,6100,2026-10-01T10:10:05Z
+27,,,practice,sheet_opened,practice,,,,,7000,2026-10-01T10:20:00Z
+28,,,practice,sheet_opened,practice,,,,,7001,2026-10-01T10:20:00Z
+29,fix2,A,practice,session_started,,,,,A,8000,2026-10-01T10:30:00Z
+30,fix2,A,practice,sheet_opened,practice,,,,,8001,2026-10-01T10:30:01Z
