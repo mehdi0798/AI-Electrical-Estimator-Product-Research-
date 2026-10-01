@@ -1,0 +1,17 @@
+[
+  { "type": "Duplex Receptacle", "unit_price": 18.5 },
+  { "type": "GFCI Receptacle", "unit_price": 27.5 },
+  { "type": "Single-Pole Switch", "unit_price": 12.0 },
+  { "type": "Three-Way Switch", "unit_price": 16.0 },
+  { "type": "2x4 LED Troffer", "unit_price": 86.0 },
+  { "type": "LED Downlight", "unit_price": 48.0 },
+  { "type": "Exit Sign", "unit_price": 64.0 },
+  { "type": "Emergency Light", "unit_price": 95.0 },
+  { "type": "Data Outlet", "unit_price": 42.0 },
+  { "type": "Occupancy Sensor", "unit_price": 58.0 },
+  { "type": "Wall Pack", "unit_price": 140.0 },
+  { "type": "Junction Box", "unit_price": 9.5 },
+  { "type": "Motor Connection", "unit_price": 210.0 },
+  { "type": "Fire Alarm Device", "unit_price": 120.0 },
+  { "type": "Exhaust Fan", "unit_price": 165.0 }
+]

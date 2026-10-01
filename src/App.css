@@ -68,9 +68,36 @@
   border: 1px solid #d8dbe0;
   border-radius: 6px;
 }
+/* Positioning context so added-item dots sit on the image in image-space. */
+.drawing-canvas {
+  position: relative;
+  display: inline-block;
+}
 .drawing-img {
   display: block;
   /* native size: no width/height constraints, no zoom */
+}
+/* Placement mode: crosshair over the drawing area only. */
+.drawing-scroll.placing,
+.drawing-scroll.placing .drawing-img {
+  cursor: crosshair;
+}
+
+/* Dots — ONLY for participant-added items (Hard rule 3). */
+.map-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px; /* center on the point */
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
+  pointer-events: none;
+}
+.map-dot.draft {
+  background: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6);
 }
 
 /* Right: list */
@@ -173,5 +200,152 @@
 .act.reject.active {
   background: #dc2626;
   border-color: #dc2626;
+  color: #fff;
+}
+
+/* Your Additions section — below the ranked list, never sorted in. */
+.additions {
+  flex: 0 0 auto;
+  border-top: 2px solid #e2e4e8;
+  max-height: 32%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.additions-header {
+  flex: 0 0 auto;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+}
+.additions-list {
+  flex: 1 1 auto;
+}
+.addition-row {
+  cursor: default;
+  background: #fafbfc;
+}
+.added-badge {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eef4ff;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+/* Add-missing button bar */
+.add-bar {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #eef0f3;
+}
+.add-btn {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.add-btn.active {
+  background: #fff;
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* Placement banner */
+.placement-banner {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: #111827;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+.banner-cancel {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+/* Popover */
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+.popover {
+  width: 320px;
+  max-width: calc(100vw - 2rem);
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.1rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+.popover-title {
+  font-weight: 700;
+  margin-bottom: 0.9rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+  color: #374151;
+}
+.field select,
+.field input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn.ghost {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+.btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
   color: #fff;
 }
