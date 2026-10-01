@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ITEM_TYPES from './config/item_types.json'
-import { logEvent, setLogContext } from './lib/logger'
+import { getLogContext, logEvent, setLogContext } from './lib/logger'
+import { nextAddId } from './lib/addIds'
 
 // v0.1 — Step 5: session flow.
 //   Start screen (participant A/B + session label) → practice → the six sheets
@@ -179,7 +180,6 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
   const [draftRoom, setDraftRoom] = useState('')
   // Confirmed additions, shown in "Your Additions" (NOT sorted into the ranked list).
   const [additions, setAdditions] = useState([])
-  const addCounter = useRef(0)
   const imgRef = useRef(null)
 
   // Submit → confirm dialog (step 5).
@@ -187,7 +187,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
 
   // Load this sheet. Point the logger at it FIRST so sheet_opened and every
   // later row event carry the right sheet id (practice logs sheet = 'practice').
+  // The cleanup flag makes this log sheet_opened exactly once: in dev, StrictMode
+  // runs the effect twice, and only the surviving run may log.
   useEffect(() => {
+    let cancelled = false
     setLogContext({ sheet: sheetId })
     fetch(`/sheets/${sheetId}.json`)
       .then((res) => {
@@ -195,10 +198,16 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
         return res.json()
       })
       .then((data) => {
+        if (cancelled) return
         setSheet(data)
         logEvent({ action: 'sheet_opened', item_id: data.id })
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [sheetId])
 
   // Escape exits placement mode (and clears any draft pin). Logs nothing.
@@ -212,16 +221,18 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
   })
 
   const changeStatus = (id, target) => {
+    // Log from the handler, NOT from inside the setStatuses updater: StrictMode
+    // runs updaters twice in dev, which logged every status change twice.
+    const old = statuses[id] // old_value for logging: 'accepted' | 'rejected' | undefined
+    const next = old === target ? undefined : target // new_value
+    logEvent({
+      // The new status when set; when toggled back to untouched, the status undone.
+      action: next ?? old,
+      item_id: id,
+      old_value: old ?? null,
+      new_value: next ?? null,
+    })
     setStatuses((prev) => {
-      const old = prev[id] // old_value for logging: 'accepted' | 'rejected' | undefined
-      const next = old === target ? undefined : target // new_value
-      logEvent({
-        // The new status when set; when toggled back to untouched, the status undone.
-        action: next ?? old,
-        item_id: id,
-        old_value: old ?? null,
-        new_value: next ?? null,
-      })
       const updated = { ...prev }
       if (next === undefined) {
         delete updated[id]
@@ -267,8 +278,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
   // Confirm the popover: append a row to "Your Additions", log add_missing.
   const confirmAddition = () => {
     if (!draft) return
-    addCounter.current += 1
-    const id = `ADD-${sheet.id}-${addCounter.current}`
+    const { session_label, participant } = getLogContext()
+    const id = nextAddId(sheet.id, { sessionLabel: session_label, participant })
     const addition = {
       id,
       type: draftType,
