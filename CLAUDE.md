@@ -36,9 +36,9 @@ These protect the experiment. Breaking one invalidates the results.
    never screen pixels, so scoring works regardless of window size or scroll.
 
 ## Tech
-- React + Vite (front end), Supabase (events table), Vercel (hosting).
+- React + Vite (front end), Supabase (event_log table), Vercel (hosting).
 - Repo stays PRIVATE.
-- Supabase Row Level Security: the anon key may INSERT into `events` only.
+- Supabase Row Level Security: the anon key may INSERT into `event_log` only.
   No SELECT, UPDATE, or DELETE from the browser.
 
 ---
@@ -93,7 +93,7 @@ answer-key/sheet1.key.json ... sheet6.key.json     # NOT in public/ or src/
 ```
 
 ### Logging
-Supabase table `events`:
+Supabase table `event_log`:
 `id, session_label, participant, sheet, action, item_id, x, y,
 old_value, new_value, client_ts, server_ts (default now())`
 
@@ -108,7 +108,7 @@ Never-lose rule, implemented simply:
 - The UI never waits on the network.
 
 ### Scoring (no admin page in v0.1)
-- Export `events` as CSV from the Supabase dashboard.
+- Export `event_log` as CSV from the Supabase dashboard.
 - `scripts/score.js` (Node, run locally) reads the CSV + `answer-key/` + RADIUS
   and prints, per participant per sheet:
   - OVER caught = phantom's final state is rejected.
