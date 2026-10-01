@@ -1,0 +1,19 @@
+{
+  "id": "sheet2",
+  "name": "First Floor — Open Office",
+  "image": "/sheets/sheet2.png",
+  "_placeholder": true,
+  "_note": "PLACEHOLDER items for Step 5 flow testing only. No planted errors, NOT an answer key. Real detected lists replace this before piloting.",
+  "items": [
+    { "id": "S2-1", "type": "2x4 LED Troffer", "room": "Open Office", "x": 480, "y": 320, "confidence": 0.96, "unit_price": 86.0 },
+    { "id": "S2-2", "type": "2x4 LED Troffer", "room": "Open Office", "x": 640, "y": 320, "confidence": 0.95, "unit_price": 86.0 },
+    { "id": "S2-3", "type": "Duplex Receptacle", "room": "Open Office", "x": 520, "y": 480, "confidence": 0.91, "unit_price": 18.5 },
+    { "id": "S2-4", "type": "Data Outlet", "room": "Open Office", "x": 580, "y": 520, "confidence": 0.89, "unit_price": 42.0 },
+    { "id": "S2-5", "type": "Occupancy Sensor", "room": "Open Office", "x": 700, "y": 400, "confidence": 0.86, "unit_price": 58.0 },
+    { "id": "S2-6", "type": "Three-Way Switch", "room": "Stairwell", "x": 900, "y": 250, "confidence": 0.83, "unit_price": 16.0 },
+    { "id": "S2-7", "type": "Emergency Light", "room": "Stairwell", "x": 940, "y": 300, "confidence": 0.8, "unit_price": 95.0 },
+    { "id": "S2-8", "type": "Exit Sign", "room": "Stairwell", "x": 960, "y": 200, "confidence": 0.76, "unit_price": 64.0 },
+    { "id": "S2-9", "type": "GFCI Receptacle", "room": "Kitchenette", "x": 280, "y": 700, "confidence": 0.72, "unit_price": 27.5 },
+    { "id": "S2-10", "type": "Exhaust Fan", "room": "Restroom", "x": 180, "y": 640, "confidence": 0.66, "unit_price": 165.0 }
+  ]
+}

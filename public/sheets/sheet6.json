@@ -1,0 +1,19 @@
+{
+  "id": "sheet6",
+  "name": "Basement — Service & Parking",
+  "image": "/sheets/sheet6.png",
+  "_placeholder": true,
+  "_note": "PLACEHOLDER items for Step 5 flow testing only. No planted errors, NOT an answer key. Real detected lists replace this before piloting.",
+  "items": [
+    { "id": "S6-1", "type": "Wall Pack", "room": "Parking L1", "x": 400, "y": 300, "confidence": 0.96, "unit_price": 140.0 },
+    { "id": "S6-2", "type": "Wall Pack", "room": "Parking L1", "x": 600, "y": 300, "confidence": 0.95, "unit_price": 140.0 },
+    { "id": "S6-3", "type": "Wall Pack", "room": "Parking L1", "x": 800, "y": 300, "confidence": 0.93, "unit_price": 140.0 },
+    { "id": "S6-4", "type": "Exit Sign", "room": "Parking L1", "x": 500, "y": 200, "confidence": 0.9, "unit_price": 64.0 },
+    { "id": "S6-5", "type": "Emergency Light", "room": "Parking L1", "x": 700, "y": 220, "confidence": 0.87, "unit_price": 95.0 },
+    { "id": "S6-6", "type": "Motor Connection", "room": "Pump Room", "x": 260, "y": 520, "confidence": 0.84, "unit_price": 210.0 },
+    { "id": "S6-7", "type": "Junction Box", "room": "Pump Room", "x": 320, "y": 560, "confidence": 0.8, "unit_price": 9.5 },
+    { "id": "S6-8", "type": "Fire Alarm Device", "room": "Service Corridor", "x": 880, "y": 480, "confidence": 0.76, "unit_price": 120.0 },
+    { "id": "S6-9", "type": "GFCI Receptacle", "room": "Storage", "x": 960, "y": 620, "confidence": 0.71, "unit_price": 27.5 },
+    { "id": "S6-10", "type": "Single-Pole Switch", "room": "Storage", "x": 1000, "y": 580, "confidence": 0.65, "unit_price": 12.0 }
+  ]
+}

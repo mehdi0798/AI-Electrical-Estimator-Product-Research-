@@ -1,0 +1,19 @@
+{
+  "id": "sheet5",
+  "name": "Roof — Mechanical & Exterior",
+  "image": "/sheets/sheet5.png",
+  "_placeholder": true,
+  "_note": "PLACEHOLDER items for Step 5 flow testing only. No planted errors, NOT an answer key. Real detected lists replace this before piloting.",
+  "items": [
+    { "id": "S5-1", "type": "Motor Connection", "room": "RTU-1", "x": 450, "y": 280, "confidence": 0.95, "unit_price": 210.0 },
+    { "id": "S5-2", "type": "Motor Connection", "room": "RTU-2", "x": 640, "y": 280, "confidence": 0.94, "unit_price": 210.0 },
+    { "id": "S5-3", "type": "Junction Box", "room": "RTU-1", "x": 480, "y": 340, "confidence": 0.9, "unit_price": 9.5 },
+    { "id": "S5-4", "type": "Junction Box", "room": "RTU-2", "x": 670, "y": 340, "confidence": 0.88, "unit_price": 9.5 },
+    { "id": "S5-5", "type": "GFCI Receptacle", "room": "Roof Deck", "x": 560, "y": 500, "confidence": 0.85, "unit_price": 27.5 },
+    { "id": "S5-6", "type": "Wall Pack", "room": "Parapet North", "x": 300, "y": 160, "confidence": 0.82, "unit_price": 140.0 },
+    { "id": "S5-7", "type": "Wall Pack", "room": "Parapet South", "x": 900, "y": 160, "confidence": 0.78, "unit_price": 140.0 },
+    { "id": "S5-8", "type": "Exhaust Fan", "room": "Roof Deck", "x": 720, "y": 540, "confidence": 0.74, "unit_price": 165.0 },
+    { "id": "S5-9", "type": "Single-Pole Switch", "room": "Stair Penthouse", "x": 980, "y": 420, "confidence": 0.69, "unit_price": 12.0 },
+    { "id": "S5-10", "type": "LED Downlight", "room": "Stair Penthouse", "x": 1020, "y": 380, "confidence": 0.62, "unit_price": 48.0 }
+  ]
+}

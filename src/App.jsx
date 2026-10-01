@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ITEM_TYPES from './config/item_types.json'
-import { logEvent } from './lib/logger'
+import { logEvent, setLogContext } from './lib/logger'
 
-// v0.1 — Step 4: logging to Supabase via a never-lose localStorage queue.
-// Builds on step 3 (add missing item), step 2 (accept/reject, highlight, live
-// bid total), and step 1. logEvent now enqueues durably; client_ts is stamped
-// by the logger, so handlers no longer pass it.
+// v0.1 — Step 5: session flow.
+//   Start screen (participant A/B + session label) → practice → the six sheets
+//   in participant order → between-sheets screen → end screen. Submit opens a
+//   confirm dialog. Logs session_started, sheet_opened, submitted, confirmed,
+//   cancelled on top of the step-4 logger.
+//
+// The review UI (steps 1–4: drawing, ranked list, accept/reject, add-missing,
+// live bid) is unchanged — it moved verbatim into <ReviewScreen>, mounted with
+// key={sheetId} so every per-sheet piece of state resets cleanly between sheets.
 
 const euro = (n) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n)
@@ -14,7 +19,147 @@ const euro = (n) =>
 // Dropdown types + unit-price lookup (single source of truth, CLAUDE.md data layout).
 const PRICE_BY_TYPE = Object.fromEntries(ITEM_TYPES.map((t) => [t.type, t.unit_price]))
 
+// Sheet order per CLAUDE.md: practice first, then A = 1→6, B = 6→1.
+const REAL_SHEETS = ['sheet1', 'sheet2', 'sheet3', 'sheet4', 'sheet5', 'sheet6']
+const sheetOrder = (participant) =>
+  participant === 'B'
+    ? ['practice', ...[...REAL_SHEETS].reverse()]
+    : ['practice', ...REAL_SHEETS]
+
 export default function App() {
+  // Flow phases: 'start' | 'review' | 'between' | 'end'.
+  const [phase, setPhase] = useState('start')
+  const [order, setOrder] = useState([]) // sheet ids in participant order
+  const [index, setIndex] = useState(0) // position within `order`
+
+  // Begin the session: set the logging context, log session_started, open the
+  // first sheet (practice).
+  const startSession = (participant, sessionLabel) => {
+    setLogContext({ participant, session_label: sessionLabel })
+    logEvent({ action: 'session_started', new_value: participant })
+    setOrder(sheetOrder(participant))
+    setIndex(0)
+    setPhase('review')
+  }
+
+  // A sheet was confirmed. Advance: more sheets → between screen, else → end.
+  const onSheetConfirmed = () => {
+    if (index + 1 < order.length) {
+      setPhase('between')
+    } else {
+      setPhase('end')
+    }
+  }
+
+  const continueToNext = () => {
+    setIndex((i) => i + 1)
+    setPhase('review')
+  }
+
+  if (phase === 'start') {
+    return <StartScreen onStart={startSession} />
+  }
+
+  if (phase === 'between') {
+    return <BetweenScreen onContinue={continueToNext} />
+  }
+
+  if (phase === 'end') {
+    return <EndScreen />
+  }
+
+  // phase === 'review'
+  const sheetId = order[index]
+  const isPractice = sheetId === 'practice'
+  // k of 6 counts only the real sheets; practice sits at order index 0.
+  const headerPosition = isPractice ? 'Practice' : `Sheet ${index} of ${REAL_SHEETS.length}`
+  return (
+    <ReviewScreen
+      key={sheetId}
+      sheetId={sheetId}
+      headerPosition={headerPosition}
+      onConfirmed={onSheetConfirmed}
+    />
+  )
+}
+
+// --- Start screen -----------------------------------------------------------
+
+function StartScreen({ onStart }) {
+  const [participant, setParticipant] = useState('A')
+  const [sessionLabel, setSessionLabel] = useState('')
+  const canStart = sessionLabel.trim().length > 0
+
+  return (
+    <div className="screen">
+      <div className="card">
+        <h1 className="card-title">Voltra Takeoff</h1>
+        <p className="card-sub">Session setup</p>
+
+        <label className="field">
+          <span>Participant</span>
+          <select value={participant} onChange={(e) => setParticipant(e.target.value)}>
+            <option value="A">A — sheets 1 → 6</option>
+            <option value="B">B — sheets 6 → 1</option>
+          </select>
+        </label>
+
+        <label className="field">
+          <span>Session label</span>
+          <input
+            type="text"
+            value={sessionLabel}
+            placeholder="e.g. pilot1, real"
+            onChange={(e) => setSessionLabel(e.target.value)}
+          />
+        </label>
+
+        <button
+          type="button"
+          className="btn primary wide"
+          disabled={!canStart}
+          onClick={() => onStart(participant, sessionLabel.trim())}
+        >
+          Start session
+        </button>
+        <p className="card-hint">Practice sheet first, then the six study sheets.</p>
+      </div>
+    </div>
+  )
+}
+
+// --- Between-sheets screen --------------------------------------------------
+
+function BetweenScreen({ onContinue }) {
+  return (
+    <div className="screen">
+      <div className="card">
+        <h1 className="card-title">Sheet done.</h1>
+        <p className="card-sub">Click Continue when ready.</p>
+        <button type="button" className="btn primary wide" onClick={onContinue}>
+          Continue
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// --- End screen -------------------------------------------------------------
+
+function EndScreen() {
+  return (
+    <div className="screen">
+      <div className="card">
+        <h1 className="card-title">Session complete.</h1>
+        <p className="card-sub">Thank you.</p>
+      </div>
+    </div>
+  )
+}
+
+// --- Review screen (steps 1–4, now one sheet at a time) ---------------------
+
+function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
   const [sheet, setSheet] = useState(null)
   const [error, setError] = useState(null)
 
@@ -37,8 +182,14 @@ export default function App() {
   const addCounter = useRef(0)
   const imgRef = useRef(null)
 
+  // Submit → confirm dialog (step 5).
+  const [confirming, setConfirming] = useState(false)
+
+  // Load this sheet. Point the logger at it FIRST so sheet_opened and every
+  // later row event carry the right sheet id (practice logs sheet = 'practice').
   useEffect(() => {
-    fetch('/sheets/practice.json')
+    setLogContext({ sheet: sheetId })
+    fetch(`/sheets/${sheetId}.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to load sheet (${res.status})`)
         return res.json()
@@ -48,7 +199,7 @@ export default function App() {
         logEvent({ action: 'sheet_opened', item_id: data.id })
       })
       .catch((err) => setError(err.message))
-  }, [])
+  }, [sheetId])
 
   // Escape exits placement mode (and clears any draft pin). Logs nothing.
   useEffect(() => {
@@ -62,7 +213,7 @@ export default function App() {
 
   const changeStatus = (id, target) => {
     setStatuses((prev) => {
-      const old = prev[id] // old_value for logging (step 4): 'accepted' | 'rejected' | undefined
+      const old = prev[id] // old_value for logging: 'accepted' | 'rejected' | undefined
       const next = old === target ? undefined : target // new_value
       logEvent({
         // The new status when set; when toggled back to untouched, the status undone.
@@ -164,6 +315,21 @@ export default function App() {
       0,
     ) + additions.reduce((sum, a) => sum + a.unit_price, 0)
 
+  // Submit → open the confirm dialog, logging the bid in new_value (step 5).
+  const submitSheet = () => {
+    logEvent({ action: 'submitted', item_id: sheet.id, new_value: bidTotal })
+    setConfirming(true)
+  }
+  const confirmSubmit = () => {
+    logEvent({ action: 'confirmed', item_id: sheet.id, new_value: bidTotal })
+    setConfirming(false)
+    onConfirmed()
+  }
+  const cancelSubmit = () => {
+    logEvent({ action: 'cancelled', item_id: sheet.id, new_value: bidTotal })
+    setConfirming(false)
+  }
+
   // Position the draft pin + addition dots back onto the rendered image using the
   // same natural→rendered ratio (stays correct as the box scrolls/resizes).
   const dotStyle = (pt) => {
@@ -179,11 +345,16 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">Voltra Takeoff</div>
-        <div className="sheet-name">Practice · {sheet.name}</div>
+        <div className="sheet-name">
+          {headerPosition} · {sheet.name}
+        </div>
         <div className="bid">
           <span className="bid-label">Bid total</span>
           <span className="bid-amount">{euro(bidTotal)}</span>
         </div>
+        <button type="button" className="btn primary submit-btn" onClick={submitSheet}>
+          Submit sheet
+        </button>
       </header>
 
       <main className="layout">
@@ -360,6 +531,23 @@ export default function App() {
                 Cancel
               </button>
               <button type="button" className="btn primary" onClick={confirmAddition}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit confirm dialog (step 5) */}
+      {confirming && (
+        <div className="popover-backdrop" onClick={cancelSubmit}>
+          <div className="popover" onClick={(e) => e.stopPropagation()}>
+            <div className="popover-title">Final bid: {euro(bidTotal)}. Confirm?</div>
+            <div className="popover-actions">
+              <button type="button" className="btn ghost" onClick={cancelSubmit}>
+                Cancel
+              </button>
+              <button type="button" className="btn primary" onClick={confirmSubmit}>
                 Confirm
               </button>
             </div>

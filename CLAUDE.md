@@ -1,5 +1,8 @@
 # Project brief for Claude Code
 
+## Current status
+v0.1 steps 1–5 DONE. Next: step 6.
+
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
 (capstone, HUGS 2027 workshop at ICSE). Professional estimators review an

@@ -1,0 +1,19 @@
+{
+  "id": "sheet1",
+  "name": "Ground Floor — Power & Lighting",
+  "image": "/sheets/sheet1.png",
+  "_placeholder": true,
+  "_note": "PLACEHOLDER items for Step 5 flow testing only. No planted errors, NOT an answer key. Real detected lists replace this before piloting.",
+  "items": [
+    { "id": "S1-1", "type": "Duplex Receptacle", "room": "Lobby", "x": 410, "y": 300, "confidence": 0.97, "unit_price": 18.5 },
+    { "id": "S1-2", "type": "2x4 LED Troffer", "room": "Lobby", "x": 560, "y": 260, "confidence": 0.95, "unit_price": 86.0 },
+    { "id": "S1-3", "type": "Single-Pole Switch", "room": "Office 110", "x": 640, "y": 430, "confidence": 0.92, "unit_price": 12.0 },
+    { "id": "S1-4", "type": "Duplex Receptacle", "room": "Office 110", "x": 700, "y": 500, "confidence": 0.9, "unit_price": 18.5 },
+    { "id": "S1-5", "type": "Data Outlet", "room": "Office 110", "x": 360, "y": 600, "confidence": 0.87, "unit_price": 42.0 },
+    { "id": "S1-6", "type": "Exit Sign", "room": "Corridor", "x": 880, "y": 170, "confidence": 0.85, "unit_price": 64.0 },
+    { "id": "S1-7", "type": "Occupancy Sensor", "room": "Corridor", "x": 420, "y": 560, "confidence": 0.82, "unit_price": 58.0 },
+    { "id": "S1-8", "type": "LED Downlight", "room": "Break Room", "x": 230, "y": 690, "confidence": 0.78, "unit_price": 48.0 },
+    { "id": "S1-9", "type": "GFCI Receptacle", "room": "Break Room", "x": 300, "y": 720, "confidence": 0.73, "unit_price": 27.5 },
+    { "id": "S1-10", "type": "Junction Box", "room": "Electrical Room", "x": 1100, "y": 110, "confidence": 0.68, "unit_price": 9.5 }
+  ]
+}
