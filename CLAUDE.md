@@ -53,17 +53,21 @@ and every action lands in the database. Nothing more.
    - Left: the drawing PNG at native size inside a scrollable box
      (scrolling = panning). No zoom buttons. No boxes.
    - Right: "Detected N items · Sorted by confidence", then the full list.
-   - Row: `type · room`, confidence %, unit price, quantity (default 1),
-     accept ✓ / reject ✕ / edit quantity. Status can be changed again;
-     every change is logged with old and new value.
+   - One row = one physical symbol on the drawing. There is NO quantity:
+     a type with 16 symbols is 16 separate rows. A phantom (OVER) is one
+     extra row mapping to no symbol; a deleted item (UNDER) is one row that
+     should exist but doesn't.
+   - Row: `type · room`, confidence %, unit price, accept ✓ / reject ✕.
+     Status can be changed again; every change is logged with old and new
+     value.
    - Clicking a row only highlights the row (logged as `row_clicked`).
      It does nothing on the drawing in v0.1.
    - **Add missing item**: button → crosshair cursor → participant clicks the
      drawing → picks a type from a dropdown → a new row is appended at the
      bottom of the list marked "Added by you", and a small dot appears at the
      click point. Log x,y in image pixels. Added rows can be removed (logged).
-   - **Bid total**: sum of quantity × unit_price over every row that is not
-     rejected (untouched rows count; added items count). Updates live.
+   - **Bid total**: sum of unit_price over every row that is not rejected
+     (untouched rows count; added items count). Updates live.
 3. **Confirm**: Submit sheet → dialog "Final bid: €X. Confirm?" → Confirm
    moves on; Cancel returns to the sheet.
 4. **Between sheets**: "Sheet done. Click Continue when ready."
@@ -91,7 +95,7 @@ Supabase table `events`:
 old_value, new_value, client_ts, server_ts (default now())`
 
 v0.1 actions: `session_started, sheet_opened, row_clicked, accepted, rejected,
-edited, add_missing, add_removed, submitted, confirmed, cancelled`.
+add_missing, add_removed, submitted, confirmed, cancelled`.
 Added items get ids `ADD-<sheet>-<n>`.
 
 Never-lose rule, implemented simply:
@@ -104,14 +108,14 @@ Never-lose rule, implemented simply:
 - Export `events` as CSV from the Supabase dashboard.
 - `scripts/score.js` (Node, run locally) reads the CSV + `answer-key/` + RADIUS
   and prints, per participant per sheet:
-  - OVER caught = phantom's final state is rejected or quantity 0.
+  - OVER caught = phantom's final state is rejected.
   - UNDER caught = an add_missing (not later removed) within RADIUS image
     pixels of the deleted item's x,y.
   - final confirmed bid.
 
 ### Build order for v0.1 (I trigger one step at a time)
 1. Scaffold React + Vite. Load the practice sheet: drawing left, full list right.
-2. Row actions, quantity edit, row highlight, live bid total.
+2. Row actions (accept/reject), row highlight, live bid total.
 3. Add missing item (click → type → row + dot, image-pixel coordinates).
 4. Supabase logging with localStorage queue; insert-only RLS.
 5. Start screen, A/B sheet order, submit + confirm, between-sheets, end screen.
@@ -134,8 +138,16 @@ drawing" framing.
 
 ## Open settings
 - Scoring RADIUS for "add missing": set before first real session.
-- Untouched rows count in the bid total: default YES.
+- Untouched (not-yet-reviewed) rows count in the bid total: default YES.
 - Currency: €.
+
+## Note on the list model
+The list is ungrouped — one row per physical symbol, never "type ×N".
+Grouping would collapse OVER and UNDER into a single "is this count right?"
+check and destroy the asymmetry being studied. A long flat list of near-
+identical rows is intended: it makes a phantom (OVER) catchable only by
+cross-checking a row against the drawing, and a deletion (UNDER) invisible
+in the list by construction. Keep it ungrouped.
 
 ## How to work with me
 - Build ONE step at a time. Do only the step I ask for.
