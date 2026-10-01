@@ -9,6 +9,11 @@ dist
 dist-ssr
 *.local
 
+# Env (real secrets live in .env.local; .env.example is committed)
+.env
+.env.local
+.env.*.local
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json

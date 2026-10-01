@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ITEM_TYPES from './config/item_types.json'
+import { logEvent } from './lib/logger'
 
-// v0.1 — Step 3: add missing item (placement mode → pin → popover → "Your Additions").
-// Builds on step 2 (row accept/reject, highlight, live bid total) and step 1.
-// Logging is still a stub (step 4 swaps logEvent for the Supabase + localStorage queue).
+// v0.1 — Step 4: logging to Supabase via a never-lose localStorage queue.
+// Builds on step 3 (add missing item), step 2 (accept/reject, highlight, live
+// bid total), and step 1. logEvent now enqueues durably; client_ts is stamped
+// by the logger, so handlers no longer pass it.
 
 const euro = (n) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n)
 
 // Dropdown types + unit-price lookup (single source of truth, CLAUDE.md data layout).
 const PRICE_BY_TYPE = Object.fromEntries(ITEM_TYPES.map((t) => [t.type, t.unit_price]))
-
-// Step 4 replaces this with the real logger (localStorage queue → Supabase insert).
-// Kept to the events shape so nothing above needs to change when it does.
-const logEvent = (event) => {
-  // eslint-disable-next-line no-console
-  console.log('[event]', event)
-}
 
 export default function App() {
   const [sheet, setSheet] = useState(null)
@@ -48,7 +43,10 @@ export default function App() {
         if (!res.ok) throw new Error(`Failed to load sheet (${res.status})`)
         return res.json()
       })
-      .then(setSheet)
+      .then((data) => {
+        setSheet(data)
+        logEvent({ action: 'sheet_opened', item_id: data.id })
+      })
       .catch((err) => setError(err.message))
   }, [])
 
@@ -72,7 +70,6 @@ export default function App() {
         item_id: id,
         old_value: old ?? null,
         new_value: next ?? null,
-        client_ts: Date.now(),
       })
       const updated = { ...prev }
       if (next === undefined) {
@@ -136,7 +133,6 @@ export default function App() {
       x: draft.x,
       y: draft.y,
       new_value: draftType,
-      client_ts: Date.now(),
     })
     // Leave placement mode after a successful add.
     setPlacing(false)
@@ -147,7 +143,7 @@ export default function App() {
   // Remove a confirmed addition (CLAUDE.md: added rows can be removed, logged).
   const removeAddition = (id) => {
     setAdditions((prev) => prev.filter((a) => a.id !== id))
-    logEvent({ action: 'add_removed', item_id: id, client_ts: Date.now() })
+    logEvent({ action: 'add_removed', item_id: id })
   }
 
   if (error) {
@@ -232,7 +228,7 @@ export default function App() {
                     // Suppress normal highlight while in placement mode.
                     if (placing) return
                     setSelectedId(item.id)
-                    logEvent({ action: 'row_clicked', item_id: item.id, client_ts: Date.now() })
+                    logEvent({ action: 'row_clicked', item_id: item.id })
                   }}
                 >
                   <div className="item-main">
