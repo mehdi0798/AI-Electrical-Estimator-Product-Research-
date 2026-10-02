@@ -72,12 +72,12 @@ the policy list in step 2, plus the GET returning `[]`.
    **Adjust GitHub App Permissions** → **Only select repositories** → pick the
    repo → **Save** → back to Vercel.
 4. **Import**.
-5. **Project Name**: `voltra-takeoff` (participants see it in the URL).
+5. **Project Name**: `voltra-ai` (participants see it in the URL).
 6. Leave: Framework Preset **Vite**, Root Directory `./`, Build Command
    `npm run build`, Output Directory `dist`.
 7. **Environment Variables**: add the two variables above, values copied from
    `.env.local`. Leave all environments ticked.
-8. **Deploy**. The URL is `https://voltra-takeoff.vercel.app` (or similar).
+8. **Deploy**. The URL is `https://voltra-ai.vercel.app` (or similar).
 
 ### 5. Check the site is public
 Open the URL in a private window. If you get a Vercel login page: project
