@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node scripts/score.test.js && node scripts/validate-sheets.test.js",
+    "validate": "node scripts/validate-sheets.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
