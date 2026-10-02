@@ -120,6 +120,58 @@ test('a reused ADD id is flagged on the sheet', () => {
   assert.ok(!warnings.some((w) => /ADD-sheet1-2/.test(w)))
 })
 
+test('resume: session_resumed is not a re-open, and state carries across it', () => {
+  const key = {
+    manipulations: [
+      { id: 'S-1', direction: 'OVER', x: 0, y: 0, cost: 1, pair_id: 'p' },
+      { id: 'U', direction: 'UNDER', x: 100, y: 100, cost: 1, pair_id: 'p' },
+    ],
+  }
+  const ev = [
+    { client_ts: 1, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 2, action: 'rejected', item_id: 'S-1', new_value: 'rejected' },
+    { client_ts: 3, action: 'add_missing', item_id: 'ADD-sheet1-1', x: 100, y: 105, new_value: 't' },
+    // reload: the app logs session_resumed (not sheet_opened) and restores state
+    { client_ts: 4, action: 'session_resumed', item_id: 'sheet1', new_value: 'review' },
+    // the restored add is removed after the resume; its add_removed still matches
+    { client_ts: 5, action: 'add_removed', item_id: 'ADD-sheet1-1' },
+    { client_ts: 6, action: 'add_missing', item_id: 'ADD-sheet1-2', x: 98, y: 100, new_value: 't' },
+    { client_ts: 7, action: 'confirmed', item_id: 'sheet1', new_value: '10' },
+  ]
+  const r = scoreSheet(ev, key, 40)
+  assert.equal(r.resumed, 1)
+  assert.deepEqual(r.warnings, []) // no "opened 2 times", no unmatched add_removed
+  assert.equal(r.overs[0].caught, true) // reject from before the reload still counts
+  assert.equal(r.unders[0].caught, true)
+  assert.equal(r.unders[0].byAdd, 'ADD-sheet1-2')
+})
+
+test('resume: an open right after a resume is not counted; a plain reload still warns', () => {
+  const key = { manipulations: [] }
+  const resumedThenOpened = [
+    { client_ts: 1, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 2, action: 'session_resumed', item_id: 'sheet1' },
+    { client_ts: 3, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 4, action: 'confirmed', item_id: 'sheet1', new_value: '1' },
+  ]
+  assert.deepEqual(scoreSheet(resumedThenOpened, key, 40).warnings, [])
+  const plainReload = [
+    { client_ts: 1, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 2, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 3, action: 'confirmed', item_id: 'sheet1', new_value: '1' },
+  ]
+  assert.ok(scoreSheet(plainReload, key, 40).warnings.some((w) => /opened 2 times/.test(w)))
+})
+
+test('resume: no run warning, since resume never logs a second session_started', () => {
+  const ev = [
+    { action: 'session_started', session: 'r1', participant: 'A' },
+    { action: 'session_resumed', session: 'r1', participant: 'A' },
+    { action: 'session_resumed', session: 'r1', participant: 'A' },
+  ]
+  assert.deepEqual(runWarnings(ev), [])
+})
+
 console.log('fixture scoring')
 
 test('practice events are ignored; sheets with no key are skipped and reported', () => {

@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ITEM_TYPES from './config/item_types.json'
+import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
+import {
+  clearSession,
+  loadSession,
+  loadSheetState,
+  savePosition,
+  saveSheetState,
+  startSavedSession,
+} from './lib/sessionStore'
 
 // v0.1 — Step 5: session flow.
 //   Start screen (participant A/B + session label) → practice → the six sheets
@@ -28,33 +37,72 @@ const sheetOrder = (participant) =>
     : ['practice', ...REAL_SHEETS]
 
 export default function App() {
-  // Flow phases: 'start' | 'review' | 'between' | 'end'.
-  const [phase, setPhase] = useState('start')
+  // Flow phases: 'start' | 'resume' | 'review' | 'between' | 'end'.
+  // An unfinished saved session (features.resume) opens on the 'resume' screen.
+  const [saved, setSaved] = useState(() => (FEATURES.resume ? loadSession() : null))
+  const [phase, setPhase] = useState(() => (saved ? 'resume' : 'start'))
   const [order, setOrder] = useState([]) // sheet ids in participant order
   const [index, setIndex] = useState(0) // position within `order`
+  // The sheet that was resumed into: its mount logs session_resumed, not sheet_opened.
+  const [resumedSheet, setResumedSheet] = useState(null)
 
   // Begin the session: set the logging context, log session_started, open the
   // first sheet (practice).
   const startSession = (participant, sessionLabel) => {
     setLogContext({ participant, session_label: sessionLabel })
     logEvent({ action: 'session_started', new_value: participant })
-    setOrder(sheetOrder(participant))
+    const newOrder = sheetOrder(participant)
+    if (FEATURES.resume) {
+      startSavedSession({ session_label: sessionLabel, participant, order: newOrder })
+    }
+    setOrder(newOrder)
     setIndex(0)
     setPhase('review')
+  }
+
+  // Continue a saved session where it stopped (same browser).
+  const resumeSession = () => {
+    const s = saved
+    setLogContext({ participant: s.participant, session_label: s.session_label, sheet: s.order[s.index] })
+    logEvent({ action: 'session_resumed', item_id: s.order[s.index], new_value: s.phase })
+    setOrder(s.order)
+    setIndex(s.index)
+    setResumedSheet(s.phase === 'review' ? s.order[s.index] : null)
+    setSaved(null)
+    setPhase(s.phase)
+  }
+
+  // Drop a saved session and go to the start screen. Logged against the old
+  // session so the log shows it was abandoned here.
+  const discardSession = () => {
+    const s = saved
+    setLogContext({ participant: s.participant, session_label: s.session_label, sheet: s.order[s.index] })
+    logEvent({ action: 'session_discarded', item_id: s.order[s.index], new_value: s.phase })
+    setLogContext({ participant: null, session_label: null, sheet: 'practice' })
+    clearSession()
+    setSaved(null)
+    setPhase('start')
   }
 
   // A sheet was confirmed. Advance: more sheets → between screen, else → end.
   const onSheetConfirmed = () => {
     if (index + 1 < order.length) {
+      if (FEATURES.resume) savePosition({ index, phase: 'between' })
       setPhase('between')
     } else {
+      if (FEATURES.resume) clearSession() // finished: nothing to resume
       setPhase('end')
     }
   }
 
   const continueToNext = () => {
+    if (FEATURES.resume) savePosition({ index: index + 1, phase: 'review' })
     setIndex((i) => i + 1)
     setPhase('review')
+  }
+
+  if (phase === 'resume') {
+    return <ResumeScreen saved={saved} onResume={resumeSession} onDiscard={discardSession} />
   }
 
   if (phase === 'start') {
@@ -80,7 +128,36 @@ export default function App() {
       sheetId={sheetId}
       headerPosition={headerPosition}
       onConfirmed={onSheetConfirmed}
+      resumed={sheetId === resumedSheet}
     />
+  )
+}
+
+// --- Resume screen (features.resume) ------------------------------------------
+
+function ResumeScreen({ saved, onResume, onDiscard }) {
+  const sheetId = saved.order[saved.index]
+  const where =
+    sheetId === 'practice'
+      ? 'Practice sheet'
+      : `Sheet ${saved.index} of ${REAL_SHEETS.length}`
+  return (
+    <div className="screen">
+      <div className="card">
+        <h1 className="card-title">Unfinished session</h1>
+        <p className="card-sub">
+          Session {saved.session_label} · Participant {saved.participant} · {where}
+          {saved.phase === 'between' ? ' (done)' : ''}
+        </p>
+        <button type="button" className="btn primary wide" onClick={onResume}>
+          Resume session
+        </button>
+        <button type="button" className="btn ghost wide" onClick={onDiscard}>
+          Discard and start new
+        </button>
+        <p className="card-hint">Everything already done in this session stays logged.</p>
+      </div>
+    </div>
   )
 }
 
@@ -160,13 +237,15 @@ function EndScreen() {
 
 // --- Review screen (steps 1–4, now one sheet at a time) ---------------------
 
-function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
+function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false }) {
   const [sheet, setSheet] = useState(null)
   const [error, setError] = useState(null)
+  // features.resume: this sheet's saved state, if any (read once on mount).
+  const [savedSheet] = useState(() => (FEATURES.resume ? loadSheetState(sheetId) : null))
 
   // Row status map: { [item.id]: 'accepted' | 'rejected' }.
   // Untouched rows have NO entry (undefined) and still count in the bid total.
-  const [statuses, setStatuses] = useState({})
+  const [statuses, setStatuses] = useState(() => savedSheet?.statuses ?? {})
   // Row highlight — visual only in v0.1 (does nothing on the drawing).
   const [selectedId, setSelectedId] = useState(null)
 
@@ -179,8 +258,16 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
   const [draftType, setDraftType] = useState(ITEM_TYPES[0].type)
   const [draftRoom, setDraftRoom] = useState('')
   // Confirmed additions, shown in "Your Additions" (NOT sorted into the ranked list).
-  const [additions, setAdditions] = useState([])
+  const [additions, setAdditions] = useState(() => savedSheet?.additions ?? [])
   const imgRef = useRef(null)
+  // Re-render once the drawing has loaded so dots can be placed (restored
+  // additions exist before the image does).
+  const [, setImgLoaded] = useState(false)
+
+  // features.resume: keep this sheet's state saved so a reload can restore it.
+  useEffect(() => {
+    if (FEATURES.resume) saveSheetState(sheetId, { statuses, additions })
+  }, [sheetId, statuses, additions])
 
   // Submit → confirm dialog (step 5).
   const [confirming, setConfirming] = useState(false)
@@ -200,7 +287,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
       .then((data) => {
         if (cancelled) return
         setSheet(data)
-        logEvent({ action: 'sheet_opened', item_id: data.id })
+        // A resumed sheet was already opened; session_resumed was logged instead.
+        if (!resumed) logEvent({ action: 'sheet_opened', item_id: data.id })
       })
       .catch((err) => {
         if (!cancelled) setError(err.message)
@@ -379,6 +467,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed }) {
                 src={sheet.image}
                 alt={sheet.name}
                 onClick={handleDrawingClick}
+                onLoad={() => setImgLoaded(true)}
               />
               {/* Dots ONLY for participant-added items (Hard rule 3). */}
               {additions.map((a) => (
