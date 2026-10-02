@@ -58,6 +58,15 @@ export function boxPercent({ x, y, size, naturalWidth, naturalHeight }) {
   }
 }
 
+// True if the scroll position is (within `tol` px) at a target the app scrolled
+// to itself. Used to tell programmatic scrolls (zoom re-centre, jump) apart from
+// participant pans, so only real pans are logged.
+export function isAtScroll(pos, target, tol = 2) {
+  return (
+    !!target && Math.abs(pos.left - target.left) <= tol && Math.abs(pos.top - target.top) <= tol
+  )
+}
+
 // Zoom steps for the zoom buttons (features.zoom). 1 = native size, as in v0.1.
 export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
 

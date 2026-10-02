@@ -15,6 +15,7 @@ import {
   ZOOM_LEVELS,
   boxPercent,
   clientToImage,
+  isAtScroll,
   nextZoom,
   scrollToCenter,
   viewportCenterImage,
@@ -171,6 +172,62 @@ test('boxPercent: one square box centred on the item, clipped to the image', () 
 test('boxPercent: no box for a point outside the image', () => {
   assert.equal(boxPercent({ x: 1000, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
   assert.equal(boxPercent({ x: 10, y: -1, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
+})
+
+console.log('zoom (features.zoom, Hard rule 7)')
+
+test('the same image point gives the same x,y at every zoom and scroll', () => {
+  const nw = 1307
+  const nh = 486
+  const point = { x: 30, y: 456 } // D2 in the self-test key
+  for (const zoom of [...ZOOM_LEVELS, 0.317]) {
+    for (const [scrollLeft, scrollTop] of [[0, 0], [123, 45], [900, 300]]) {
+      // The image box on screen: scrolled, scaled by zoom, offset by the pane.
+      const rect = { left: 16 - scrollLeft, top: 70 - scrollTop, width: nw * zoom, height: nh * zoom }
+      // Where that image point is on screen.
+      const clientX = rect.left + point.x * zoom
+      const clientY = rect.top + point.y * zoom
+      assert.deepEqual(
+        clientToImage({ clientX, clientY, rect, naturalWidth: nw, naturalHeight: nh }),
+        point,
+        `zoom ${zoom}, scroll ${scrollLeft},${scrollTop}`,
+      )
+    }
+  }
+})
+
+test('view centre in image px is independent of zoom (centre, then read back)', () => {
+  const nw = 4000
+  const nh = 3000
+  const view = { viewWidth: 600, viewHeight: 400 }
+  const p = { x: 1800, y: 1200 }
+  for (const zoom of ZOOM_LEVELS) {
+    const { left, top } = scrollToCenter({ ...p, zoom, naturalWidth: nw, naturalHeight: nh, ...view })
+    const c = viewportCenterImage({ scrollLeft: left, scrollTop: top, ...view, zoom })
+    assert.ok(Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1, `zoom ${zoom}: ${JSON.stringify(c)}`)
+  }
+})
+
+test('viewportCenterImage converts screen scroll to image px', () => {
+  assert.deepEqual(
+    viewportCenterImage({ scrollLeft: 400, scrollTop: 100, viewWidth: 400, viewHeight: 300, zoom: 2 }),
+    { x: 300, y: 125 },
+  )
+})
+
+test('nextZoom steps through the levels and stops at the ends', () => {
+  assert.equal(nextZoom(1, 1), 1.25)
+  assert.equal(nextZoom(1, -1), 0.75)
+  assert.equal(nextZoom(3, 1), 3)
+  assert.equal(nextZoom(0.5, -1), 0.5)
+  assert.equal(nextZoom(0.6, 1), 0.75) // from a "Fit" value, to the next step
+  assert.equal(nextZoom(0.6, -1), 0.5)
+})
+
+test('isAtScroll tells a settled programmatic scroll from a participant pan', () => {
+  assert.equal(isAtScroll({ left: 451, top: 93 }, { left: 450, top: 93 }), true)
+  assert.equal(isAtScroll({ left: 470, top: 93 }, { left: 450, top: 93 }), false)
+  assert.equal(isAtScroll({ left: 0, top: 0 }, null), false)
 })
 
 console.log(`\n${passed} tests passed`)
