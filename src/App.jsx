@@ -235,6 +235,34 @@ function EndScreen() {
   )
 }
 
+// --- Analyse panel (features.analyseAnimation) ---------------------------------
+// Shown in the list pane until detection "finishes". Nothing is drawn on the
+// drawing (Hard rule 3), and no count is shown before the list itself.
+
+function AnalysePanel({ running, durationMs, onAnalyse }) {
+  return (
+    <div className="analyse-panel">
+      {running ? (
+        <div className="analyse-running" role="status" aria-live="polite">
+          <div className="analyse-spinner" aria-hidden="true" />
+          <div className="analyse-title">Detecting symbols…</div>
+          <div className="analyse-track" aria-hidden="true">
+            <div className="analyse-fill" style={{ animationDuration: `${durationMs}ms` }} />
+          </div>
+        </div>
+      ) : (
+        <div className="analyse-idle">
+          <div className="analyse-title">Drawing loaded</div>
+          <p className="analyse-text">Run the analysis to detect electrical symbols on this sheet.</p>
+          <button type="button" className="btn primary" onClick={onAnalyse}>
+            Analyse drawing
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // --- Review screen (steps 1–4, now one sheet at a time) ---------------------
 
 function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false }) {
@@ -264,10 +292,21 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   // additions exist before the image does).
   const [, setImgLoaded] = useState(false)
 
+  // features.analyseAnimation: the list is revealed only after an "Analyse
+  // drawing" step. 'idle' -> 'running' -> 'done'. With the flag off it starts
+  // 'done', i.e. exactly as v0.1. A resumed sheet that was analysed stays done.
+  const [analysis, setAnalysis] = useState(() =>
+    !FEATURES.analyseAnimation || savedSheet?.analysed ? 'done' : 'idle',
+  )
+  const analysisTimer = useRef(null)
+  useEffect(() => () => clearTimeout(analysisTimer.current), [])
+
   // features.resume: keep this sheet's state saved so a reload can restore it.
   useEffect(() => {
-    if (FEATURES.resume) saveSheetState(sheetId, { statuses, additions })
-  }, [sheetId, statuses, additions])
+    if (FEATURES.resume) {
+      saveSheetState(sheetId, { statuses, additions, analysed: analysis === 'done' })
+    }
+  }, [sheetId, statuses, additions, analysis])
 
   // Submit → confirm dialog (step 5).
   const [confirming, setConfirming] = useState(false)
@@ -429,6 +468,21 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     setConfirming(false)
   }
 
+  // features.analyseAnimation: a fixed, identical delay for every participant
+  // (clamped to the 3-5 s the design calls for). Presentation only: the list is
+  // pre-authored and simply revealed when the timer ends.
+  const analysed = analysis === 'done'
+  const startAnalysis = () => {
+    if (analysis !== 'idle') return
+    const ms = Math.min(5000, Math.max(3000, Number(FEATURES.analyseDurationMs) || 4000))
+    logEvent({ action: 'analysis_started', item_id: sheet.id, new_value: ms })
+    setAnalysis('running')
+    analysisTimer.current = setTimeout(() => {
+      logEvent({ action: 'analysis_completed', item_id: sheet.id, new_value: items.length })
+      setAnalysis('done')
+    }, ms)
+  }
+
   // Position the draft pin + addition dots back onto the rendered image using the
   // same natural→rendered ratio (stays correct as the box scrolls/resizes).
   const dotStyle = (pt) => {
@@ -449,9 +503,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
         </div>
         <div className="bid">
           <span className="bid-label">Bid total</span>
-          <span className="bid-amount">{euro(bidTotal)}</span>
+          <span className="bid-amount">{analysed ? euro(bidTotal) : '—'}</span>
         </div>
-        <button type="button" className="btn primary submit-btn" onClick={submitSheet}>
+        <button
+          type="button"
+          className="btn primary submit-btn"
+          onClick={submitSheet}
+          disabled={!analysed}
+        >
           Submit sheet
         </button>
       </header>
@@ -480,6 +539,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
 
         {/* Right: full list, sorted by confidence */}
         <aside className="list-pane">
+          {!analysed ? (
+            <AnalysePanel
+              running={analysis === 'running'}
+              durationMs={Math.min(5000, Math.max(3000, Number(FEATURES.analyseDurationMs) || 4000))}
+              onAnalyse={startAnalysis}
+            />
+          ) : (
+          <>
           <div className="list-header">
             Detected {items.length} items · Sorted by confidence
           </div>
@@ -588,6 +655,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
               {placing ? 'Cancel' : '+ Add Missing Item'}
             </button>
           </div>
+          </>
+          )}
         </aside>
       </main>
 

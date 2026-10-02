@@ -365,6 +365,66 @@
   margin-left: 0.5rem;
 }
 
+/* Analyse panel (features.analyseAnimation) — in the list pane only */
+.analyse-panel {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+.analyse-idle,
+.analyse-running {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 280px;
+}
+.analyse-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.analyse-text {
+  margin: 0 0 0.25rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+.analyse-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e4e8;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: analyse-spin 0.9s linear infinite;
+}
+.analyse-track {
+  width: 220px;
+  height: 4px;
+  background: #e2e4e8;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.analyse-fill {
+  height: 100%;
+  width: 0;
+  background: #2563eb;
+  animation-name: analyse-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes analyse-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes analyse-fill {
+  to {
+    width: 100%;
+  }
+}
+
 /* Full-screen states: start / between / end */
 .screen {
   display: flex;

@@ -1,4 +1,6 @@
 {
   "_note": "Feature flags. All default to false: with every flag false the app behaves exactly as v0.1. Anything that changes what participants see or do must be identical for every participant, so set these once before the first real session and do not change them mid-study.",
-  "resume": false
+  "resume": false,
+  "analyseAnimation": false,
+  "analyseDurationMs": 4000
 }
