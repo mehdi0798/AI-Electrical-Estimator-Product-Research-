@@ -2,7 +2,7 @@
 
 ## Current status
 - v0.1 DONE and deployed (Vercel project `voltra-ai`). Scoring self-tested.
-  Still pending: the two-minute check that the live site writes to `event_log`.
+  Live check passed: the live site writes to `event_log`.
 - Branch `overnight` (validator, resume, analyse animation, click-to-jump,
   zoom, design pass) merged into main with all flags OFF, then `clickToJump`
   turned ON.
