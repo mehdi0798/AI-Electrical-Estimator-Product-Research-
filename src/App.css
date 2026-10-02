@@ -100,6 +100,17 @@
   box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6);
 }
 
+/* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
+.jump-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #2563eb;
+  border-radius: 3px;
+  background: rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+
 /* Right: list */
 .list-pane {
   flex: 1 1 40%;

@@ -11,6 +11,14 @@ import {
   saveSheetState,
   startSavedSession,
 } from '../src/lib/sessionStore.js'
+import {
+  ZOOM_LEVELS,
+  boxPercent,
+  clientToImage,
+  nextZoom,
+  scrollToCenter,
+  viewportCenterImage,
+} from '../src/lib/geometry.js'
 
 let passed = 0
 function test(name, fn) {
@@ -131,6 +139,38 @@ test('a storage that throws never breaks the app', () => {
   assert.doesNotThrow(() => saveSheetState('practice', {}, brokenStorage))
   assert.doesNotThrow(() => savePosition({ index: 0, phase: 'review' }, brokenStorage))
   assert.doesNotThrow(() => clearSession(brokenStorage))
+})
+
+console.log('geometry (Hard rule 7, click-to-jump)')
+
+test('clientToImage at native size matches the v0.1 maths', () => {
+  // Image 1307x486 at native size, scrolled so its left edge is 200px off-screen.
+  const rect = { left: -200 + 16, top: 70, width: 1307, height: 486 }
+  assert.deepEqual(
+    clientToImage({ clientX: 16 + 30, clientY: 70 + 456, rect, naturalWidth: 1307, naturalHeight: 486 }),
+    { x: 230, y: 456 },
+  )
+})
+
+test('scrollToCenter centres a point, and clamps at the image edges', () => {
+  const base = { zoom: 1, naturalWidth: 1307, naturalHeight: 486, viewWidth: 400, viewHeight: 300 }
+  assert.deepEqual(scrollToCenter({ ...base, x: 650, y: 243 }), { left: 450, top: 93 })
+  assert.deepEqual(scrollToCenter({ ...base, x: 10, y: 10 }), { left: 0, top: 0 })
+  assert.deepEqual(scrollToCenter({ ...base, x: 1300, y: 480 }), { left: 907, top: 186 })
+  // A view bigger than the image can't scroll at all.
+  assert.deepEqual(scrollToCenter({ ...base, viewWidth: 2000, viewHeight: 900, x: 650, y: 243 }), { left: 0, top: 0 })
+})
+
+test('boxPercent: one square box centred on the item, clipped to the image', () => {
+  const b = boxPercent({ x: 500, y: 250, size: 50, naturalWidth: 1000, naturalHeight: 500 })
+  assert.deepEqual(b, { left: '47.5%', top: '45%', width: '5%', height: '10%' })
+  const corner = boxPercent({ x: 10, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 })
+  assert.deepEqual(corner, { left: '0%', top: '0%', width: '3.5%', height: '7%' })
+})
+
+test('boxPercent: no box for a point outside the image', () => {
+  assert.equal(boxPercent({ x: 1000, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
+  assert.equal(boxPercent({ x: 10, y: -1, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
 })
 
 console.log(`\n${passed} tests passed`)

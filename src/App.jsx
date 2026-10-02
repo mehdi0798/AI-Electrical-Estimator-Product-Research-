@@ -4,6 +4,7 @@ import ITEM_TYPES from './config/item_types.json'
 import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
+import { boxPercent, clientToImage, scrollToCenter } from './lib/geometry'
 import {
   clearSession,
   loadSession,
@@ -288,6 +289,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   // Confirmed additions, shown in "Your Additions" (NOT sorted into the ranked list).
   const [additions, setAdditions] = useState(() => savedSheet?.additions ?? [])
   const imgRef = useRef(null)
+  const scrollRef = useRef(null) // the drawing's scroll box (scroll = pan)
   // Re-render once the drawing has loaded so dots can be placed (restored
   // additions exist before the image does).
   const [, setImgLoaded] = useState(false)
@@ -390,13 +392,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     if (!placing) return
     const img = imgRef.current
     if (!img) return
-    const rect = img.getBoundingClientRect()
-    // Image is shown at native size, but scale defensively so coords are always
-    // naturalWidth/naturalHeight-based regardless of any future rendered sizing.
-    const scaleX = img.naturalWidth / rect.width
-    const scaleY = img.naturalHeight / rect.height
-    const x = Math.round((e.clientX - rect.left) * scaleX)
-    const y = Math.round((e.clientY - rect.top) * scaleY)
+    // naturalWidth/naturalHeight-based at any rendered size or zoom (Hard rule 7).
+    const { x, y } = clientToImage({
+      clientX: e.clientX,
+      clientY: e.clientY,
+      rect: img.getBoundingClientRect(),
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+    })
     setDraft({ x, y })
     setDraftType(ITEM_TYPES[0].type)
     setDraftRoom('')
@@ -483,6 +486,38 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     }, ms)
   }
 
+  // features.clickToJump: scroll the drawing so the clicked row's item is centred.
+  const zoom = 1
+  const jumpTo = (item) => {
+    const box = scrollRef.current
+    const img = imgRef.current
+    if (!box || !img || !img.naturalWidth) return
+    const { left, top } = scrollToCenter({
+      x: item.x,
+      y: item.y,
+      zoom,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      viewWidth: box.clientWidth,
+      viewHeight: box.clientHeight,
+    })
+    box.scrollTo({ left, top, behavior: 'smooth' })
+  }
+
+  // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
+  // with features.clickToJump. Derived from selectedId, so there can never be two.
+  const selectedItem = FEATURES.clickToJump ? items.find((it) => it.id === selectedId) : null
+  const jumpBox =
+    selectedItem && imgRef.current?.naturalWidth
+      ? boxPercent({
+          x: selectedItem.x,
+          y: selectedItem.y,
+          size: Number(FEATURES.jumpBoxPx) || 48,
+          naturalWidth: imgRef.current.naturalWidth,
+          naturalHeight: imgRef.current.naturalHeight,
+        })
+      : null
+
   // Position the draft pin + addition dots back onto the rendered image using the
   // same natural→rendered ratio (stays correct as the box scrolls/resizes).
   const dotStyle = (pt) => {
@@ -518,7 +553,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       <main className="layout">
         {/* Left: drawing at native size inside a scrollable box (scroll = pan) */}
         <section className="drawing-pane">
-          <div className={'drawing-scroll' + (placing ? ' placing' : '')}>
+          <div ref={scrollRef} className={'drawing-scroll' + (placing ? ' placing' : '')}>
             <div className="drawing-canvas">
               <img
                 ref={imgRef}
@@ -533,6 +568,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                 <span key={a.id} className="map-dot" style={dotStyle(a)} />
               ))}
               {draft && <span className="map-dot draft" style={dotStyle(draft)} />}
+              {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
+              {jumpBox && <span className="jump-box" style={jumpBox} aria-hidden="true" />}
             </div>
           </div>
         </section>
@@ -567,6 +604,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                     if (placing) return
                     setSelectedId(item.id)
                     logEvent({ action: 'row_clicked', item_id: item.id })
+                    if (FEATURES.clickToJump) jumpTo(item)
                   }}
                 >
                   <div className="item-main">
