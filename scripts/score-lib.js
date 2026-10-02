@@ -243,13 +243,20 @@ export function scoreSheet(events, key, radius) {
   // add_missing records, in order. add_removed marks the latest live add with that id.
   const adds = []
   let opened = 0
+  let resumed = 0
   let confirmedBid = null
   let confirmedCount = 0
+  let prevAction = null
 
   for (const e of ordered) {
     switch (e.action) {
       case 'sheet_opened':
-        opened++
+        // A resume (features.resume) logs session_resumed instead of sheet_opened.
+        // Defensively, an open right after a resume is not counted as a re-open.
+        if (prevAction !== 'session_resumed') opened++
+        break
+      case 'session_resumed':
+        resumed++
         break
       case 'accepted':
       case 'rejected':
@@ -279,6 +286,7 @@ export function scoreSheet(events, key, radius) {
       default:
         break // row_clicked, submitted, cancelled, session_started: not scored
     }
+    prevAction = e.action
   }
 
   if (opened > 1) {
@@ -368,6 +376,7 @@ export function scoreSheet(events, key, radius) {
     unmatchedAdds: addReport.filter((a) => !a.removed && a.matchedId === null),
     realRejected,
     confirmedBid,
+    resumed,
     warnings,
   }
 }
@@ -497,6 +506,7 @@ export function formatReport(results, skipped, radius, { dropped = 0, runWarning
       out.push(`    ${a.id} at (${a.x}, ${a.y})  ${near}  ${verdict}`)
     }
 
+    if (r.resumed) out.push(`  Resumed after reload: ${r.resumed} time(s) (state restored, not a warning)`)
     out.push(`  Real items rejected: ${r.realRejected.length}`)
     out.push(`  add_missing matching no deleted item: ${r.unmatchedAdds.length}`)
     for (const w of r.warnings) out.push(`  WARNING: ${w}`)
