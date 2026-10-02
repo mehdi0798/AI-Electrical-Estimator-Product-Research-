@@ -141,6 +141,23 @@ export default function App() {
   )
 }
 
+// --- Wordmark (design pass) ------------------------------------------------------
+
+function Wordmark({ large = false }) {
+  return (
+    <span className={'wordmark' + (large ? ' large' : '')}>
+      <span className="wordmark-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13.5 2 4.5 13.5h6.2L9.8 22l9.7-12.3h-6.3L13.5 2z" />
+        </svg>
+      </span>
+      <span className="wordmark-text">
+        Voltra <b>Takeoff</b>
+      </span>
+    </span>
+  )
+}
+
 // --- Resume screen (features.resume) ------------------------------------------
 
 function ResumeScreen({ saved, onResume, onDiscard }) {
@@ -152,6 +169,9 @@ function ResumeScreen({ saved, onResume, onDiscard }) {
   return (
     <div className="screen">
       <div className="card">
+        <div className="card-brand">
+          <Wordmark />
+        </div>
         <h1 className="card-title">Unfinished session</h1>
         <p className="card-sub">
           Session {saved.session_label} · Participant {saved.participant} · {where}
@@ -179,8 +199,11 @@ function StartScreen({ onStart }) {
   return (
     <div className="screen">
       <div className="card">
-        <h1 className="card-title">Voltra Takeoff</h1>
-        <p className="card-sub">Session setup</p>
+        <div className="card-brand">
+          <Wordmark large />
+        </div>
+        <h1 className="card-title">Session setup</h1>
+        <p className="card-sub">Practice sheet first, then the six study sheets.</p>
 
         <label className="field">
           <span>Participant</span>
@@ -208,7 +231,6 @@ function StartScreen({ onStart }) {
         >
           Start session
         </button>
-        <p className="card-hint">Practice sheet first, then the six study sheets.</p>
       </div>
     </div>
   )
@@ -220,6 +242,9 @@ function BetweenScreen({ onContinue }) {
   return (
     <div className="screen">
       <div className="card">
+        <div className="card-brand">
+          <Wordmark />
+        </div>
         <h1 className="card-title">Sheet done.</h1>
         <p className="card-sub">Click Continue when ready.</p>
         <button type="button" className="btn primary wide" onClick={onContinue}>
@@ -236,6 +261,9 @@ function EndScreen() {
   return (
     <div className="screen">
       <div className="card">
+        <div className="card-brand">
+          <Wordmark />
+        </div>
         <h1 className="card-title">Session complete.</h1>
         <p className="card-sub">Thank you.</p>
       </div>
@@ -477,10 +505,15 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   }
 
   if (error) {
-    return <div className="state">Could not load sheet: {error}</div>
+    return <div className="state error">Could not load sheet: {error}</div>
   }
   if (!sheet) {
-    return <div className="state">Loading…</div>
+    return (
+      <div className="state" role="status">
+        <div className="spinner" aria-hidden="true" />
+        Loading sheet…
+      </div>
+    )
   }
 
   // Hard rule 4: sorted by confidence, highest first; shown in full.
@@ -621,7 +654,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">Voltra Takeoff</div>
+        <div className="brand">
+          <Wordmark />
+        </div>
         <div className="sheet-name">
           {headerPosition} · {sheet.name}
         </div>
@@ -719,6 +754,12 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           <>
           <div className="list-header">
             Detected {items.length} items · Sorted by confidence
+          </div>
+          <div className="list-columns" aria-hidden="true">
+            <span className="col-main">Item · Room</span>
+            <span className="col-conf">Conf.</span>
+            <span className="col-price">Unit price</span>
+            <span className="col-actions">Review</span>
           </div>
           <ul className="item-list">
             {items.map((item) => {

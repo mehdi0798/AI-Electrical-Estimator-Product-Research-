@@ -1,8 +1,65 @@
+/* Voltra design system (v0.1 design pass).
+   Neutral greys + ONE accent (blue). Green/red appear only as the functional
+   accept/reject states. Light theme only, so every participant sees the same. */
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
-  color: #1a1a1a;
-  background: #f4f5f7;
+  /* Neutrals */
+  --bg: #f5f6f8; /* app background */
+  --bg-sunken: #eceef2; /* drawing pane */
+  --surface: #ffffff; /* panels, cards, rows */
+  --surface-2: #f9fafb; /* panel headers, hover */
+  --border: #e4e7ec;
+  --border-strong: #d0d5dd;
+  --text: #101828;
+  --text-2: #475467;
+  --text-3: #98a2b3;
+
+  /* The one accent */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff4ff;
+  --accent-ring: rgba(37, 99, 235, 0.32);
+
+  /* Functional states only (accept / reject / remove) */
+  --success: #079455;
+  --danger: #d92d20;
+  --danger-soft: #fef3f2;
+
+  /* Type scale */
+  /* System fonts only: no web-font download, and no locally installed font
+     that would make some participants' screens differ. */
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+
+  /* Spacing (4px base) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* Radius */
+  --r-sm: 6px; /* controls */
+  --r-md: 8px; /* panels */
+  --r-lg: 12px; /* dialogs, cards */
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 20px 48px rgba(16, 24, 40, 0.18);
+
+  font-family: var(--font);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -14,4 +71,17 @@ body,
 #root {
   margin: 0;
   height: 100%;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* One visible focus style for keyboard users everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
