@@ -3,7 +3,7 @@
   "resume": false,
   "analyseAnimation": false,
   "analyseDurationMs": 4000,
-  "clickToJump": false,
+  "clickToJump": true,
   "jumpBoxPx": 48,
   "zoom": false
 }
