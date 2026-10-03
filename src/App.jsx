@@ -34,8 +34,12 @@ import {
 const euro = (n) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n)
 
-// Dropdown types + unit-price lookup (single source of truth, CLAUDE.md data layout).
-const PRICE_BY_TYPE = Object.fromEntries(ITEM_TYPES.map((t) => [t.type, t.unit_price]))
+// Add-dialog names + unit-price lookup. Until step 3, item_types.json still holds
+// the placeholder labels (its `type` key is the name); every added item gets the
+// type PLACEHOLDER_TYPE, same as the placeholder sheet rows.
+const NAME_OPTIONS = ITEM_TYPES.map((t) => t.type)
+const PRICE_BY_NAME = Object.fromEntries(ITEM_TYPES.map((t) => [t.type, t.unit_price]))
+const PLACEHOLDER_TYPE = 'Placeholder'
 
 // Sheet order per CLAUDE.md: practice first, then A = 1→6, B = 6→1.
 const REAL_SHEETS = ['sheet1', 'sheet2', 'sheet3', 'sheet4', 'sheet5', 'sheet6']
@@ -319,8 +323,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const [placing, setPlacing] = useState(false)
   // Draft pin awaiting the popover's Confirm/Cancel. { x, y } in ORIGINAL IMAGE PIXELS.
   const [draft, setDraft] = useState(null)
-  const [draftType, setDraftType] = useState(ITEM_TYPES[0].type)
-  const [draftRoom, setDraftRoom] = useState('')
+  const [draftName, setDraftName] = useState(NAME_OPTIONS[0])
   // Confirmed additions, shown in "Your Additions" (NOT sorted into the ranked list).
   const [additions, setAdditions] = useState(() => savedSheet?.additions ?? [])
   const imgRef = useRef(null)
@@ -449,7 +452,6 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const cancelPlacement = () => {
     setPlacing(false)
     setDraft(null)
-    setDraftRoom('')
   }
 
   // Click on the drawing while placing: capture it as the pin, convert to
@@ -467,8 +469,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       naturalHeight: img.naturalHeight,
     })
     setDraft({ x, y })
-    setDraftType(ITEM_TYPES[0].type)
-    setDraftRoom('')
+    setDraftName(NAME_OPTIONS[0])
   }
 
   // Confirm the popover: append a row to "Your Additions", log add_missing.
@@ -478,11 +479,11 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     const id = nextAddId(sheet.id, { sessionLabel: session_label, participant })
     const addition = {
       id,
-      type: draftType,
-      room: draftRoom.trim(),
+      name: draftName,
+      type: PLACEHOLDER_TYPE,
       x: draft.x,
       y: draft.y,
-      unit_price: PRICE_BY_TYPE[draftType] ?? 0,
+      unit_price: PRICE_BY_NAME[draftName] ?? 0,
     }
     setAdditions((prev) => [...prev, addition])
     logEvent({
@@ -490,12 +491,11 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       item_id: id,
       x: draft.x,
       y: draft.y,
-      new_value: draftType,
+      new_value: draftName,
     })
     // Leave placement mode after a successful add.
     setPlacing(false)
     setDraft(null)
-    setDraftRoom('')
   }
 
   // Remove a confirmed addition (CLAUDE.md: added rows can be removed, logged).
@@ -756,7 +756,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             Detected {items.length} items · Sorted by confidence
           </div>
           <div className="list-columns" aria-hidden="true">
-            <span className="col-main">Item · Room</span>
+            <span className="col-main">Item · Type</span>
             <span className="col-conf">Conf.</span>
             <span className="col-price">Unit price</span>
             <span className="col-actions">Review</span>
@@ -782,8 +782,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                   }}
                 >
                   <div className="item-main">
-                    <span className="item-type">{item.type}</span>
-                    <span className="item-room"> · {item.room}</span>
+                    <span className="item-name">{item.name}</span>
+                    <span className="item-type"> · {item.type}</span>
                   </div>
                   <div className="item-meta">
                     <span className="item-conf">
@@ -834,8 +834,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                 {additions.map((a) => (
                   <li className="item-row addition-row" key={a.id}>
                     <div className="item-main">
-                      <span className="item-type">{a.type}</span>
-                      {a.room && <span className="item-room"> · {a.room}</span>}
+                      <span className="item-name">{a.name}</span>
+                      <span className="item-type"> · {a.type}</span>
                       <span className="added-badge">Added</span>
                     </div>
                     <div className="item-meta">
@@ -888,24 +888,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           <div className="popover" onClick={(e) => e.stopPropagation()}>
             <div className="popover-title">Add missing item</div>
             <label className="field">
-              <span>Type</span>
-              <select value={draftType} onChange={(e) => setDraftType(e.target.value)}>
-                {ITEM_TYPES.map((t) => (
-                  <option key={t.type} value={t.type}>
-                    {t.type}
+              <span>Name</span>
+              <select value={draftName} onChange={(e) => setDraftName(e.target.value)} autoFocus>
+                {NAME_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="field">
-              <span>Room</span>
-              <input
-                type="text"
-                value={draftRoom}
-                placeholder="e.g. Office 101"
-                onChange={(e) => setDraftRoom(e.target.value)}
-                autoFocus
-              />
             </label>
             <div className="popover-actions">
               <button type="button" className="btn ghost" onClick={cancelPlacement}>

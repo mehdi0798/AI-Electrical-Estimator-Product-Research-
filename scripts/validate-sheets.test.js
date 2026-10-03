@@ -43,12 +43,12 @@ function validSheet() {
     name: 'Fixture',
     image: '/sheets/sheet9.png',
     items: [
-      { id: 'S9-1', type: 'Duplex Receptacle', room: 'A', x: 10, y: 10, confidence: 0.95, unit_price: 18.5 },
-      { id: 'S9-2', type: 'Exit Sign', room: 'A', x: 20, y: 20, confidence: 0.9, unit_price: 64 },
-      { id: 'S9-3', type: 'LED Downlight', room: 'B', x: 30, y: 30, confidence: 0.85, unit_price: 48 },
-      { id: 'S9-4', type: 'Junction Box', room: 'B', x: 40, y: 40, confidence: 0.8, unit_price: 9.5 },
-      { id: 'S9-5', type: 'Data Outlet', room: 'C', x: 50, y: 50, confidence: 0.75, unit_price: 42 },
-      { id: 'S9-6', type: 'Wall Pack', room: 'C', x: 60, y: 60, confidence: 0.7, unit_price: 140 },
+      { id: 'S9-1', name: 'Duplex Receptacle', type: 'Placeholder', x: 10, y: 10, confidence: 0.95, unit_price: 18.5 },
+      { id: 'S9-2', name: 'Exit Sign', type: 'Placeholder', x: 20, y: 20, confidence: 0.9, unit_price: 64 },
+      { id: 'S9-3', name: 'LED Downlight', type: 'Placeholder', x: 30, y: 30, confidence: 0.85, unit_price: 48 },
+      { id: 'S9-4', name: 'Junction Box', type: 'Placeholder', x: 40, y: 40, confidence: 0.8, unit_price: 9.5 },
+      { id: 'S9-5', name: 'Data Outlet', type: 'Placeholder', x: 50, y: 50, confidence: 0.75, unit_price: 42 },
+      { id: 'S9-6', name: 'Wall Pack', type: 'Placeholder', x: 60, y: 60, confidence: 0.7, unit_price: 140 },
     ],
   }
 }
@@ -90,8 +90,20 @@ test('a valid sheet and key pass with no errors', () => {
 
 test('missing item field is an error', () => {
   const s = validSheet()
-  delete s.items[1].room
-  assert.ok(hasError(run(s), /item S9-2: missing "room"/))
+  delete s.items[1].name
+  assert.ok(hasError(run(s), /item S9-2: missing "name"/))
+})
+
+test('missing item type is an error', () => {
+  const s = validSheet()
+  delete s.items[2].type
+  assert.ok(hasError(run(s), /item S9-3: missing "type"/))
+})
+
+test('non-text item name is an error', () => {
+  const s = validSheet()
+  s.items[0].name = 42
+  assert.ok(hasError(run(s), /item S9-1: "name" must be text/))
 })
 
 test('missing sheet field and missing manipulation field are errors', () => {

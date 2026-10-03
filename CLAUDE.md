@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 1 below.
+- NOW: v0.2, real sheets. Next: step 3 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -66,10 +66,9 @@ removable), live bid total in € (sum of unit_price over every row not
 rejected, added items included).
 Click a row: the drawing scrolls to that item and boxes it (Hard rule 3),
 if its x,y lies inside the image.
-Rooms are still in the app until step 2: the Add dialog picks from 15
-placeholder types (`src/config/item_types.json`) plus a free-text Room; rows
-show `type · room`; the list header says "Item · Room"; the validator
-requires `room`.
+Step 2 done: items carry `name` and `type`; the placeholder lists use
+`type = Placeholder` and the Add dialog picks a name from `item_types.json`
+until step 3.
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.

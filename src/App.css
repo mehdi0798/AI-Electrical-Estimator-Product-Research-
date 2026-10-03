@@ -318,8 +318,8 @@
   box-shadow: inset 3px 0 0 var(--accent);
 }
 /* Rejected rows stay visible but read as struck through */
+.item-row.rejected .item-name,
 .item-row.rejected .item-type,
-.item-row.rejected .item-room,
 .item-row.rejected .item-price {
   text-decoration: line-through;
   color: var(--text-3);
@@ -330,11 +330,11 @@
   font-size: var(--text-md);
   line-height: 1.35;
 }
-.item-type {
+.item-name {
   font-weight: 600;
   color: var(--text);
 }
-.item-room {
+.item-type {
   color: var(--text-2);
 }
 .item-meta {

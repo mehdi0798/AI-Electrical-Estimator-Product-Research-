@@ -269,7 +269,7 @@ export function scoreSheet(events, key, radius) {
         }
         break
       case 'add_missing':
-        adds.push({ id: e.item_id, x: e.x, y: e.y, type: e.new_value, removed: false })
+        adds.push({ id: e.item_id, x: e.x, y: e.y, name: e.new_value, removed: false })
         break
       case 'add_removed': {
         const live = [...adds].reverse().find((a) => a.id === e.item_id && !a.removed)
@@ -343,7 +343,7 @@ export function scoreSheet(events, key, radius) {
       id: a.id,
       x: a.x,
       y: a.y,
-      type: a.type,
+      name: a.name,
       removed: a.removed,
       nearestId: nearest?.id ?? null,
       nearestDist: nearest?.d ?? null,

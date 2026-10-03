@@ -35,7 +35,7 @@ export function displayOrder(items) {
 const isStr = (v) => typeof v === 'string' && v.trim() !== ''
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
 
-const ITEM_FIELDS = ['id', 'type', 'room', 'x', 'y', 'confidence', 'unit_price']
+const ITEM_FIELDS = ['id', 'name', 'type', 'x', 'y', 'confidence', 'unit_price']
 const MANIP_FIELDS = ['id', 'direction', 'x', 'y', 'cost', 'pair_id']
 
 function checkInside(where, x, y, size, errors) {
@@ -108,7 +108,7 @@ export function validateSheet({ sheet, key, imageSize, isPractice }) {
         errors.push(`${where}: missing "${f}"`)
       }
     }
-    for (const f of ['id', 'type', 'room']) {
+    for (const f of ['id', 'name', 'type']) {
       if (it?.[f] !== undefined && typeof it[f] !== 'string') errors.push(`${where}: "${f}" must be text`)
     }
     for (const f of ['x', 'y', 'unit_price']) {

@@ -5,15 +5,15 @@
   "_placeholder": true,
   "_note": "PLACEHOLDER items for Step 5 flow testing only. No planted errors, NOT an answer key. Real detected lists replace this before piloting.",
   "items": [
-    { "id": "S4-1", "type": "Motor Connection", "room": "Lab 301", "x": 430, "y": 350, "confidence": 0.96, "unit_price": 210.0 },
-    { "id": "S4-2", "type": "GFCI Receptacle", "room": "Lab 301", "x": 500, "y": 420, "confidence": 0.94, "unit_price": 27.5 },
-    { "id": "S4-3", "type": "GFCI Receptacle", "room": "Lab 301", "x": 560, "y": 420, "confidence": 0.92, "unit_price": 27.5 },
-    { "id": "S4-4", "type": "2x4 LED Troffer", "room": "Lab 301", "x": 520, "y": 280, "confidence": 0.89, "unit_price": 86.0 },
-    { "id": "S4-5", "type": "Exhaust Fan", "room": "Fume Hood", "x": 660, "y": 320, "confidence": 0.86, "unit_price": 165.0 },
-    { "id": "S4-6", "type": "Emergency Light", "room": "Lab 301", "x": 700, "y": 460, "confidence": 0.82, "unit_price": 95.0 },
-    { "id": "S4-7", "type": "Occupancy Sensor", "room": "Lab 301", "x": 380, "y": 300, "confidence": 0.79, "unit_price": 58.0 },
-    { "id": "S4-8", "type": "Data Outlet", "room": "Lab 301", "x": 620, "y": 520, "confidence": 0.75, "unit_price": 42.0 },
-    { "id": "S4-9", "type": "Exit Sign", "room": "Corridor", "x": 860, "y": 180, "confidence": 0.7, "unit_price": 64.0 },
-    { "id": "S4-10", "type": "Junction Box", "room": "Electrical Room", "x": 1060, "y": 130, "confidence": 0.63, "unit_price": 9.5 }
+    { "id": "S4-1", "name": "Motor Connection", "type": "Placeholder", "x": 430, "y": 350, "confidence": 0.96, "unit_price": 210.0 },
+    { "id": "S4-2", "name": "GFCI Receptacle", "type": "Placeholder", "x": 500, "y": 420, "confidence": 0.94, "unit_price": 27.5 },
+    { "id": "S4-3", "name": "GFCI Receptacle", "type": "Placeholder", "x": 560, "y": 420, "confidence": 0.92, "unit_price": 27.5 },
+    { "id": "S4-4", "name": "2x4 LED Troffer", "type": "Placeholder", "x": 520, "y": 280, "confidence": 0.89, "unit_price": 86.0 },
+    { "id": "S4-5", "name": "Exhaust Fan", "type": "Placeholder", "x": 660, "y": 320, "confidence": 0.86, "unit_price": 165.0 },
+    { "id": "S4-6", "name": "Emergency Light", "type": "Placeholder", "x": 700, "y": 460, "confidence": 0.82, "unit_price": 95.0 },
+    { "id": "S4-7", "name": "Occupancy Sensor", "type": "Placeholder", "x": 380, "y": 300, "confidence": 0.79, "unit_price": 58.0 },
+    { "id": "S4-8", "name": "Data Outlet", "type": "Placeholder", "x": 620, "y": 520, "confidence": 0.75, "unit_price": 42.0 },
+    { "id": "S4-9", "name": "Exit Sign", "type": "Placeholder", "x": 860, "y": 180, "confidence": 0.7, "unit_price": 64.0 },
+    { "id": "S4-10", "name": "Junction Box", "type": "Placeholder", "x": 1060, "y": 130, "confidence": 0.63, "unit_price": 9.5 }
   ]
 }
