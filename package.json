@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/score.test.js && node scripts/validate-sheets.test.js && node scripts/app-lib.test.js",
-    "validate": "node scripts/validate-sheets.js"
+    "test": "node scripts/score.test.js && node scripts/validate-sheets.test.js && node scripts/app-lib.test.js && node scripts/import-baselines.test.js",
+    "validate": "node scripts/validate-sheets.js",
+    "import-baselines": "node scripts/import-baselines.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
