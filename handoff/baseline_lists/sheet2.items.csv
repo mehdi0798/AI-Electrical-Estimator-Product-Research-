@@ -1,0 +1,46 @@
+id,name,type,description,label,where,x,y,status
+B001,E1,Light fixture,"Light fixture, type E1",,"Top strip, 1st symbol from left",257,43,sure
+B002,D1,Light fixture,"Light fixture, type D1",,"Top strip, 2nd symbol from left",311,43,sure
+B003,E1,Light fixture,"Light fixture, type E1",,"Top strip, 3rd symbol from left",386,43,sure
+B004,D1,Light fixture,"Light fixture, type D1",,"Top strip, 4th symbol from left",454,43,sure
+B005,E1,Light fixture,"Light fixture, type E1",,"Top strip, 5th symbol from left",529,43,sure
+B006,D1,Light fixture,"Light fixture, type D1",,"Top strip, 6th symbol from left",597,43,sure
+B007,E1,Light fixture,"Light fixture, type E1",,"Top strip, 7th symbol from left",672,43,sure
+B008,D1,Light fixture,"Light fixture, type D1",,"Angled strip (top right), upper",718,73,sure
+B009,E1,Light fixture,"Light fixture, type E1",,"Angled strip (top right), middle",766,138,sure
+B010,D1,Light fixture,"Light fixture, type D1",,"Angled strip (top right), lower",803,190,sure
+B011,E1,Light fixture,"Light fixture, type E1",,"Right strip, at the very top, on the wall line",839,251,sure
+B012,D1,Light fixture,"Light fixture, type D1",,"Right strip, upper",839,312,sure
+B013,E1,Light fixture,"Light fixture, type E1",,"Right strip, middle",839,379,sure
+B014,D1,Light fixture,"Light fixture, type D1",,"Right strip, lower",839,438,sure
+B015,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 1 of 4, 1st from left",311,121,sure
+B016,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 1 of 4, 2nd from left",419,121,sure
+B017,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 1 of 4, 3rd from left",528,121,sure
+B018,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 1 of 4, 4th from left",636,121,sure
+B019,E1-NL,Light fixture,"Light fixture, type E1, night light",,"Big room, E1 row 1 of 3, 1st from left",366,174,sure it exists; meaning of NL to confirm on E220
+B020,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 1 of 3, 2nd from left",473,174,sure
+B021,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 1 of 3, 3rd from left",582,174,sure
+B022,E1-NL,Light fixture,"Light fixture, type E1, night light",,"Big room, E1 row 1 of 3, 4th from left",690,174,sure it exists; meaning of NL to confirm on E220
+B023,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 2 of 4, 1st from left",311,229,sure
+B024,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 2 of 4, 2nd from left",419,229,sure
+B025,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 2 of 4, 3rd from left",528,229,sure
+B026,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 2 of 4, 4th from left",636,229,sure
+B027,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 2 of 4, 5th from left",744,229,sure
+B028,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 2 of 3, 1st from left",366,283,sure
+B029,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 2 of 3, 2nd from left",473,283,sure
+B030,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 2 of 3, 3rd from left",582,283,sure
+B031,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 2 of 3, 4th from left",690,283,sure
+B032,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 3 of 4, 1st from left",311,338,sure
+B033,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 3 of 4, 2nd from left",419,338,sure
+B034,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 3 of 4, 3rd from left",528,338,sure
+B035,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 3 of 4, 4th from left",636,338,sure
+B036,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 3 of 4, 5th from left",744,338,sure
+B037,E1-NL,Light fixture,"Light fixture, type E1, night light",,"Big room, E1 row 3 of 3, 1st from left",366,391,sure it exists; meaning of NL to confirm on E220
+B038,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 3 of 3, 2nd from left",473,391,sure
+B039,E1,Light fixture,"Light fixture, type E1",,"Big room, E1 row 3 of 3, 3rd from left",582,391,sure
+B040,E1-NL,Light fixture,"Light fixture, type E1, night light",,"Big room, E1 row 3 of 3, 4th from left",690,391,sure it exists; meaning of NL to confirm on E220
+B041,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 4 of 4, 1st from left",311,446,sure
+B042,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 4 of 4, 2nd from left",419,446,sure
+B043,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 4 of 4, 3rd from left",528,446,sure
+B044,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 4 of 4, 4th from left",636,446,sure
+B045,D2,Light fixture,"Light fixture, type D2",,"Big room, D2 row 4 of 4, 5th from left",744,446,sure

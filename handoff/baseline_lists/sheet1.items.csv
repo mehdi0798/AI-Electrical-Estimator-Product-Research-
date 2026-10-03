@@ -1,0 +1,53 @@
+id,name,type,description,label,where,x,y,status
+B001,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), upper row, left",67,76,sure it exists; meaning of NL to confirm on E220
+B002,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), upper row, middle",142,76,sure it exists; meaning of NL to confirm on E220
+B003,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), upper row, right",247,76,sure it exists; meaning of NL to confirm on E220
+B004,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), lower row, left",67,144,sure it exists; meaning of NL to confirm on E220
+B005,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), lower row, middle",142,144,sure it exists; meaning of NL to confirm on E220
+B006,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (top), lower row, right",247,144,sure it exists; meaning of NL to confirm on E220
+B007,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), upper row, left",67,252,sure it exists; meaning of NL to confirm on E220
+B008,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), upper row, middle",142,252,sure it exists; meaning of NL to confirm on E220
+B009,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), upper row, right",247,252,sure it exists; meaning of NL to confirm on E220
+B010,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), lower row, left",67,319,sure it exists; meaning of NL to confirm on E220
+B011,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), lower row, middle",142,319,sure it exists; meaning of NL to confirm on E220
+B012,E2-NL,Light fixture,"Light fixture, type E2, night light",,"Left room (bottom), lower row, right",247,319,sure it exists; meaning of NL to confirm on E220
+B013,W2,Light fixture,"Wall light, type W2",,"Left room (top), top wall, left",217,31,sure
+B014,W2,Light fixture,"Wall light, type W2",,"Left room (top), top wall, right",279,31,sure
+B015,W2,Light fixture,"Wall light, type W2",,"Left room (bottom), bottom wall, left",217,367,sure
+B016,W2,Light fixture,"Wall light, type W2",,"Left room (bottom), bottom wall, right",279,367,sure
+B017,B-NL,Light fixture,"Recessed light, emergency, type B",,"Closet (top middle), centre",378,58,sure it exists; meaning of NL to confirm on E220
+B018,FE,Panelboard,Not yet identified (likely a surface mounted panelboard),,"Closet (top middle), right wall, upper",431,55,open: type not confirmed (likely a panelboard); check the panel schedule
+B019,G,Panelboard,Not yet identified (likely a surface mounted panelboard),,"Closet (top middle), right wall, lower",431,86,open: type not confirmed (likely a panelboard); check the panel schedule
+B020,E1,Light fixture,"Light fixture, type E1",,"Entry strip left of big room, top",379,145,sure
+B021,E1,Light fixture,"Light fixture, type E1",,"Entry strip left of big room, middle",379,236,sure
+B022,E1,Light fixture,"Light fixture, type E1",,"Entry strip left of big room, bottom",379,327,sure
+B023,D6,Light fixture,"Light fixture over table, type D6",,"Big room, first row of tables, 1st from left",556,75,sure
+B024,D6,Light fixture,"Light fixture over table, type D6",,"Big room, first row of tables, 2nd from left",665,75,sure
+B025,D6,Light fixture,"Light fixture over table, type D6",,"Big room, first row of tables, 3rd from left",775,75,sure
+B026,D6,Light fixture,"Light fixture over table, type D6",,"Big room, first row of tables, 4th from left",884,75,sure
+B027,D6,Light fixture,"Light fixture over table, type D6",,"Big room, second row of tables, 1st from left",556,184,sure
+B028,D6,Light fixture,"Light fixture over table, type D6",,"Big room, second row of tables, 2nd from left",665,184,sure
+B029,D6,Light fixture,"Light fixture over table, type D6",,"Big room, second row of tables, 3rd from left",775,184,sure
+B030,D6,Light fixture,"Light fixture over table, type D6",,"Big room, second row of tables, 4th from left",884,184,sure
+B031,H,Track light head,"Track light head, type H",,"Big room, upright track on the left, top head",531,117,sure
+B032,H,Track light head,"Track light head, type H",,"Big room, upright track on the left, bottom head",531,178,sure
+B033,H,Track light head,"Track light head, type H",,"Big room, middle track, left head",602,117,sure
+B034,H,Track light head,"Track light head, type H",,"Big room, middle track, right head",661,117,sure
+B035,H,Track light head,"Track light head, type H",,"Big room, right track, left head",783,117,sure
+B036,H,Track light head,"Track light head, type H",,"Big room, right track, right head",845,117,sure
+B037,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 1st from left",491,236,sure
+B038,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 2nd from left",583,236,sure
+B039,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 3rd from left",674,236,sure
+B040,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 4th from left",766,236,sure
+B041,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 5th from left",857,236,sure
+B042,E2,Light fixture,"Light fixture, type E2",,"Big room, upper row of small circles, 6th from left",948,236,sure
+B043,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 1st from left",491,327,sure
+B044,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 2nd from left",583,327,sure
+B045,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 3rd from left",674,327,sure
+B046,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 4th from left",766,327,sure
+B047,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 5th from left",857,327,sure
+B048,E2,Light fixture,"Light fixture, type E2",,"Big room, lower row of small circles, 6th from left",948,327,sure
+B049,X-SINGLE,Exit sign,"Exit sign, single face",,"Big room, bottom wall, right side",886,388,sure
+B050,Single pole wall switch,Switch,Single pole wall switch,,"Closet (top middle), bottom-left corner",351,93,sure
+B051,Occupancy sensor,Sensor,Occupancy sensor,,"Left room (top), below the lights",228,167,sure
+B052,Occupancy sensor,Sensor,Occupancy sensor,,"Left room (bottom), above the lights",228,229,sure

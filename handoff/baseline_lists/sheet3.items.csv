@@ -1,0 +1,56 @@
+id,name,type,description,label,where,x,y,status
+B001,Duplex receptacle,Receptacle,Duplex receptacle,SR-10,"Mezzanine, left wall",45,269,sure
+B002,Quad receptacle,Receptacle,Quad receptacle,SR-20,"WFMU, left wall, 1st pair from top, upper",328,129,sure
+B003,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-18,"WFMU, left wall, 1st pair from top, lower",328,150,sure
+B004,Quad receptacle,Receptacle,Quad receptacle,SR-5,"WFMU, left wall, 2nd pair, upper",328,192,sure
+B005,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-9,"WFMU, left wall, 2nd pair, lower",328,212,sure
+B006,Quad receptacle,Receptacle,Quad receptacle,SR-1,"WFMU, left wall, 3rd pair, upper",328,252,sure
+B007,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-15,"WFMU, left wall, 3rd pair, lower",328,270,sure
+B008,Quad receptacle,Receptacle,Quad receptacle,SR-9,"WFMU, left wall, 4th pair, upper",328,312,sure
+B009,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-13,"WFMU, left wall, 4th pair, lower",328,333,sure
+B010,Duplex receptacle,Receptacle,Duplex receptacle,SR-6,"WFMU, right wall",423,239,sure
+B011,Duplex receptacle,Receptacle,Duplex receptacle,SR-10,"Mezzanine, just below WFMU",385,385,sure
+B012,Duplex receptacle,Receptacle,Duplex receptacle,SR-3,"Lounge, left wall, at the black bar",467,264,sure
+B013,Duplex receptacle,Receptacle,Duplex receptacle,SR-6,"Lounge, top wall",647,114,sure
+B014,"Duplex receptacle, GFI",Receptacle,"Duplex receptacle, GFI",,"Lounge, right wall, upper",832,133,sure
+B015,"Duplex receptacle, GFI",Receptacle,"Duplex receptacle, GFI",SR-4,"Lounge, right wall, middle",832,192,sure
+B016,Duplex receptacle,Receptacle,Duplex receptacle,SR-8,"Lounge, right wall, lower",832,328,sure
+B017,Duplex receptacle,Receptacle,Duplex receptacle,SR-6,"Lounge, bottom wall",664,343,sure
+B018,Duplex receptacle,Receptacle,Duplex receptacle,SR-12,"Conference room, left wall",875,217,sure
+B019,Duplex receptacle,Receptacle,Duplex receptacle,SR-12,"Conference room, top wall",1156,114,sure
+B020,Duplex receptacle,Receptacle,Duplex receptacle,SR-12,"Conference room, bottom wall",1158,343,sure
+B021,"Floor receptacle, isolated ground",Receptacle,"Floor receptacle, isolated ground",C2-20,"Conference room, under the table, left box",1139,232,sure
+B022,Floor receptacle,Receptacle,Floor receptacle,SR-13,"Conference room, under the table, right box",1163,232,sure
+B023,Duplex receptacle,Receptacle,Duplex receptacle,SR-15,"Conference room, right wall, at the black bar",1425,232,sure
+B024,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-10,"STL/ASTL, left wall, upper",1467,213,sure
+B025,Quad receptacle,Receptacle,Quad receptacle,SR-14,"STL/ASTL, left wall, lower",1467,244,sure
+B026,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-7,"STL/ASTL, right wall, upper pair, upper",1645,222,sure
+B027,Quad receptacle,Receptacle,Quad receptacle,SR-24,"STL/ASTL, right wall, upper pair, lower",1645,250,sure
+B028,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-5,"STL/ASTL, right wall, lower pair, upper",1645,296,sure
+B029,Quad receptacle,Receptacle,Quad receptacle,SR-23,"STL/ASTL, right wall, lower pair, lower",1645,321,sure
+B030,Duplex receptacle,Receptacle,Duplex receptacle,SR-2,"Multi-purpose, left wall",1687,235,sure
+B031,Duplex receptacle,Receptacle,Duplex receptacle,SR-2,"Multi-purpose, top wall",1782,114,sure
+B032,Duplex receptacle,Receptacle,Duplex receptacle,SR-2,"Multi-purpose, right wall",1858,242,sure
+B033,Duplex receptacle,Receptacle,Duplex receptacle,SR-2,"Multi-purpose, bottom wall",1784,343,sure
+B034,Duplex receptacle,Receptacle,Duplex receptacle,SR-17,"Corridor, above Lockers",862,444,sure
+B035,Duplex receptacle,Receptacle,Duplex receptacle,SR-17,"Corridor, below STL/ASTL",1594,386,sure
+B036,Duplex receptacle,Receptacle,Duplex receptacle,SR-17,Far right wall,1976,270,sure
+B037,Duplex receptacle,Receptacle,Duplex receptacle,SR-10,"Mezzanine, bottom wall, left",155,643,sure
+B038,Duplex receptacle,Receptacle,Duplex receptacle,SR-26,"Sign/Marketing, top wall, left",1156,487,sure
+B039,Duplex receptacle,Receptacle,Duplex receptacle,SR-26,"Sign/Marketing, top wall, right",1307,487,sure
+B040,Duplex receptacle,Receptacle,Duplex receptacle,SR 7,"Sign/Marketing, right wall",1388,564,sure
+B041,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-21,"Sign/Marketing, bottom wall, 1st from left",1042,642,sure
+B042,Quad receptacle,Receptacle,Quad receptacle,SR-19,"Sign/Marketing, bottom wall, 2nd from left",1072,642,sure
+B043,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-16,"Sign/Marketing, bottom wall, 3rd from left",1121,642,sure
+B044,Quad receptacle,Receptacle,Quad receptacle,SR-21,"Sign/Marketing, bottom wall, 4th from left",1144,642,sure
+B045,Duplex receptacle,Receptacle,Duplex receptacle,SR-26,"Sign/Marketing, bottom wall, right",1317,643,sure
+B046,Duplex receptacle,Receptacle,Duplex receptacle,C2-19,"Copy/Fax, left wall",1430,541,sure
+B047,Duplex receptacle,Receptacle,Duplex receptacle,SR-28,"Copy/Fax, right wall",1554,578,sure
+B048,Duplex receptacle,Receptacle,Duplex receptacle,SR-28,"SSI, left wall",1598,578,sure
+B049,Duplex receptacle,Receptacle,Duplex receptacle,SR-28,"SSI, top wall",1680,487,sure
+B050,"Quad receptacle, isolated ground",Receptacle,"Quad receptacle, isolated ground",C2-14,"SSI, right wall, upper",1730,578,sure
+B051,Quad receptacle,Receptacle,Quad receptacle,SR-16,"SSI, right wall, lower",1730,605,sure
+B052,Duplex receptacle,Receptacle,Duplex receptacle,SR-18,"MDF room, top wall",1858,486,sure
+B053,Surface mounted panelboard,Panelboard,Surface mounted panelboard,SR,"MDF room, left wall, top box",1759,556,sure
+B054,Surface mounted panelboard,Panelboard,Surface mounted panelboard,C2,"MDF room, left wall, middle box",1759,581,sure
+B055,Surface mounted panelboard,Panelboard,Surface mounted panelboard,G1,"MDF room, left wall, bottom box",1759,598,sure

@@ -18,6 +18,8 @@ dist-ssr
 # Only the fake test fixture is tracked.
 *.csv
 !scripts/test/fixtures/events.csv
+# Researcher source data (sheet lists, catalog) is tracked; never shipped.
+!handoff/**/*.csv
 
 # Editor / OS
 .vscode/*

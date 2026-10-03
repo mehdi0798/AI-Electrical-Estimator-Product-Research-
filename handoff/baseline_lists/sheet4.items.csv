@@ -1,0 +1,55 @@
+id,name,type,description,label,where,x,y,status
+B001,H,Track light head,"Track light head, type H",,"Left side, 1st track (top), top head",232,64,sure
+B002,K,Track light head,"Track light head, type K",,"Left side, 1st track (top), middle head",232,111,sure
+B003,H,Track light head,"Track light head, type H",,"Left side, 1st track (top), bottom head",232,158,sure
+B004,D,Light fixture,"Light fixture, type D",,"Left side, near the top, right of 1st track",288,108,sure
+B005,H,Track light head,"Track light head, type H",,"Left side, 2nd track, top head",314,235,sure
+B006,K,Track light head,"Track light head, type K",,"Left side, 2nd track, middle head",314,264,sure
+B007,H,Track light head,"Track light head, type H",,"Left side, 2nd track, bottom head",314,294,sure
+B008,D-NL,Light fixture,"Light fixture, type D, night light",,"Left side, middle",288,326,sure it exists; meaning of NL to confirm on E220
+B009,H,Track light head,"Track light head, type H",,"Left side, 3rd track (over the gridded object), top head",232,387,sure
+B010,K,Track light head,"Track light head, type K",,"Left side, 3rd track (over the gridded object), middle head",232,433,sure
+B011,H,Track light head,"Track light head, type H",,"Left side, 3rd track (over the gridded object), bottom head",232,483,sure
+B012,H,Track light head,"Track light head, type H",,"Left side, 4th track, top head",314,414,sure
+B013,K,Track light head,"Track light head, type K",,"Left side, 4th track, middle head",314,443,sure
+B014,H,Track light head,"Track light head, type H",,"Left side, 4th track, bottom head",314,474,sure
+B015,D,Light fixture,"Light fixture, type D",,"Left side, lower, right of the gridded object",288,540,sure
+B016,H,Track light head,"Track light head, type H",,"Left side, 5th track (bottom), top head",232,567,sure
+B017,K,Track light head,"Track light head, type K",,"Left side, 5th track (bottom), middle head",232,615,sure
+B018,H,Track light head,"Track light head, type H",,"Left side, 5th track (bottom), bottom head",232,663,sure
+B019,D8,Light fixture,"Light fixture, type D8",,"Big room, row 1 of 5, left",573,96,sure
+B020,D8,Light fixture,"Light fixture, type D8",,"Big room, row 1 of 5, right",682,96,sure
+B021,D8,Light fixture,"Light fixture, type D8",,"Big room, row 2 of 5, left",573,214,sure
+B022,D8,Light fixture,"Light fixture, type D8",,"Big room, row 2 of 5, middle",682,214,sure
+B023,D8,Light fixture,"Light fixture, type D8",,"Big room, row 2 of 5, right",790,214,sure
+B024,D8,Light fixture,"Light fixture, type D8",,"Big room, row 3 of 5, left",573,354,sure
+B025,D8,Light fixture,"Light fixture, type D8",,"Big room, row 3 of 5, middle",682,354,sure
+B026,D8,Light fixture,"Light fixture, type D8",,"Big room, row 3 of 5, right",790,354,sure
+B027,D8,Light fixture,"Light fixture, type D8",,"Big room, row 4 of 5, left",573,493,sure
+B028,D8,Light fixture,"Light fixture, type D8",,"Big room, row 4 of 5, middle",682,493,sure
+B029,D8,Light fixture,"Light fixture, type D8",,"Big room, row 4 of 5, right",790,493,sure
+B030,D8,Light fixture,"Light fixture, type D8",,"Big room, row 5 of 5, left",573,612,sure
+B031,D8,Light fixture,"Light fixture, type D8",,"Big room, row 5 of 5, right",682,612,sure
+B032,IN-FAN,Ceiling fan,Ceiling fan,,"Big room, 1st fan from top",628,144,sure it exists; symbol is not in the legend
+B033,IN-FAN,Ceiling fan,Ceiling fan,,"Big room, 2nd fan from top",628,283,sure it exists; symbol is not in the legend
+B034,IN-FAN,Ceiling fan,Ceiling fan,,"Big room, 3rd fan from top",628,423,sure it exists; symbol is not in the legend
+B035,IN-FAN,Ceiling fan,Ceiling fan,,"Big room, 4th fan from top",628,563,sure it exists; symbol is not in the legend
+B036,D7,Light fixture,"Light fixture, type D7",,"Big room, column of small dots, 1st from top",735,217,sure
+B037,D7,Light fixture,"Light fixture, type D7",,"Big room, column of small dots, 2nd from top",735,263,sure
+B038,D7,Light fixture,"Light fixture, type D7",,"Big room, column of small dots, 3rd from top",735,307,sure
+B039,D7,Light fixture,"Light fixture, type D7",,"Big room, column of small dots, 4th from top",735,353,sure
+B040,D7,Light fixture,"Light fixture, type D7",,"Big room, column of small dots, 5th from top",735,398,sure
+B041,CL4,Light fixture,"Strip light, emergency, type CL4",,"Top-right small room, left box of the pair",801,103,check: two boxes side by side with one label - could be one double fixture
+B042,CL4,Light fixture,"Strip light, emergency, type CL4",,"Top-right small room, right box of the pair",813,103,check: two boxes side by side with one label - could be one double fixture
+B043,Occupancy sensor,Sensor,Occupancy sensor,,"Top-right small room, below hexagon 2",772,140,sure
+B044,H,Track light head,"Track light head, type H",,"Big room, right side, upper track, top head",828,394,sure
+B045,H,Track light head,"Track light head, type H",,"Big room, right side, upper track, bottom head",828,452,sure
+B046,M,Light fixture,"Light fixture, type M",,"Bottom-right room, column of 4, 1st from top",755,541,check: letter M beside the symbol read as a fixture type
+B047,M,Light fixture,"Light fixture, type M",,"Bottom-right room, column of 4, 2nd from top",755,577,check: letter M beside the symbol read as a fixture type
+B048,M,Light fixture,"Light fixture, type M",,"Bottom-right room, column of 4, 3rd from top",755,614,check: letter M beside the symbol read as a fixture type
+B049,M,Light fixture,"Light fixture, type M",,"Bottom-right room, column of 4, 4th from top",755,649,check: letter M beside the symbol read as a fixture type
+B050,E,Light fixture,"Light fixture, type E",,"Bottom-right room, upper",792,560,sure
+B051,E,Light fixture,"Light fixture, type E",,"Bottom-right room, lower",792,632,sure
+B052,H,Track light head,"Track light head, type H",,"Bottom-right room, track, top head",828,566,sure
+B053,H,Track light head,"Track light head, type H",,"Bottom-right room, track, bottom head",828,626,sure
+B054,Single pole wall switch,Switch,Single pole wall switch,,Bottom-right corner,856,660,sure

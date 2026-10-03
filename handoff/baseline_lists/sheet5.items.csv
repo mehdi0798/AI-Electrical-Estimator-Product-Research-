@@ -1,0 +1,60 @@
+id,name,type,description,label,where,x,y,status
+B001,D,Light fixture,"Light fixture, type D",,"Top band, row of 6 round lights, 1st from left",121,72,sure
+B002,D-NL,Light fixture,"Light fixture, type D, night light",,"Top band, row of 6 round lights, 2nd from left",347,72,sure
+B003,D,Light fixture,"Light fixture, type D",,"Top band, row of 6 round lights, 3rd from left",572,72,sure
+B004,D,Light fixture,"Light fixture, type D",,"Top band, row of 6 round lights, 4th from left",800,72,sure
+B005,D-NL,Light fixture,"Light fixture, type D, night light",,"Top band, row of 6 round lights, 5th from left",1026,72,sure
+B006,D,Light fixture,"Light fixture, type D",,"Top band, row of 6 round lights, 6th from left",1251,72,sure
+B007,H,Track light head,"Track light head, type H",,"Top band, 1st track from left, left head",87,106,sure
+B008,H,Track light head,"Track light head, type H",,"Top band, 1st track from left, right head",149,106,sure
+B009,H,Track light head,"Track light head, type H",,"Top band, 2nd track from left, left head",291,47,sure
+B010,H,Track light head,"Track light head, type H",,"Top band, 2nd track from left, right head",353,47,sure
+B011,H,Track light head,"Track light head, type H",,"Top band, 3rd track from left, left head",351,109,sure
+B012,H,Track light head,"Track light head, type H",,"Top band, 3rd track from left, right head",413,109,sure
+B013,H,Track light head,"Track light head, type H",,"Top band, 4th track from left, left head",502,45,sure
+B014,H,Track light head,"Track light head, type H",,"Top band, 4th track from left, right head",564,45,sure
+B015,H,Track light head,"Track light head, type H",,"Top band, 5th track from left, left head",615,109,sure
+B016,H,Track light head,"Track light head, type H",,"Top band, 5th track from left, right head",677,109,sure
+B017,H,Track light head,"Track light head, type H",,"Top band, 6th track from left, left head",715,45,sure
+B018,H,Track light head,"Track light head, type H",,"Top band, 6th track from left, right head",777,45,sure
+B019,H,Track light head,"Track light head, type H",,"Top band, 7th track from left, left head",879,109,sure
+B020,H,Track light head,"Track light head, type H",,"Top band, 7th track from left, right head",940,109,sure
+B021,H,Track light head,"Track light head, type H",,"Top band, 8th track from left, left head",926,47,sure
+B022,H,Track light head,"Track light head, type H",,"Top band, 8th track from left, right head",987,47,sure
+B023,H,Track light head,"Track light head, type H",,"Top band, 9th track from left, left head",1119,30,sure
+B024,H,Track light head,"Track light head, type H",,"Top band, 9th track from left, right head",1181,30,sure
+B025,H,Track light head,"Track light head, type H",,"Top band, 10th track from left, left head",1143,109,sure
+B026,H,Track light head,"Track light head, type H",,"Top band, 10th track from left, right head",1204,109,sure
+B027,X-DOUBLE,Exit sign,"Exit sign, double face",,"Top edge, middle",640,17,sure
+B028,L,Light fixture,"Linear light, type L",,"Lane area, 1st black bar from left",47,279,check: the letter L beside each bar is very small
+B029,L,Light fixture,"Linear light, type L",,"Lane area, 2nd black bar from left",183,279,check: the letter L beside each bar is very small
+B030,L,Light fixture,"Linear light, type L",,"Lane area, 3rd black bar from left",311,279,check: the letter L beside each bar is very small
+B031,L,Light fixture,"Linear light, type L",,"Lane area, 4th black bar from left",447,279,check: the letter L beside each bar is very small
+B032,L,Light fixture,"Linear light, type L",,"Lane area, 5th black bar from left",574,279,check: the letter L beside each bar is very small
+B033,L,Light fixture,"Linear light, type L",,"Lane area, 6th black bar from left",711,279,check: the letter L beside each bar is very small
+B034,L,Light fixture,"Linear light, type L",,"Lane area, 7th black bar from left",838,279,check: the letter L beside each bar is very small
+B035,L,Light fixture,"Linear light, type L",,"Lane area, 8th black bar from left",974,279,check: the letter L beside each bar is very small
+B036,L,Light fixture,"Linear light, type L",,"Lane area, 9th black bar from left",1102,279,check: the letter L beside each bar is very small
+B037,L,Light fixture,"Linear light, type L",,"Lane area, 10th black bar from left",1238,279,check: the letter L beside each bar is very small
+B038,D-NL,Light fixture,"Light fixture, type D, night light",,"Middle band, 1st symbol from left",121,449,sure
+B039,D,Light fixture,"Light fixture, type D",,"Middle band, 2nd symbol from left",347,449,sure
+B040,D,Light fixture,"Light fixture, type D",,"Middle band, 3rd symbol from left",572,449,sure
+B041,X-DOUBLE,Exit sign,"Exit sign, double face",,"Middle band, 4th symbol from left",694,447,sure
+B042,D-NL,Light fixture,"Light fixture, type D, night light",,"Middle band, 5th symbol from left",800,449,sure
+B043,D,Light fixture,"Light fixture, type D",,"Middle band, 6th symbol from left",1026,449,sure
+B044,D,Light fixture,"Light fixture, type D",,"Middle band, 7th symbol from left",1251,449,sure
+B045,H,Track light head,"Track light head, type H",,"Bottom-left, upright track, top head",43,594,sure
+B046,K,Track light head,"Track light head, type K",,"Bottom-left, upright track, middle head",43,626,sure
+B047,H,Track light head,"Track light head, type H",,"Bottom-left, upright track, bottom head",43,655,sure
+B048,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, upper row, 1st from left",140,534,sure
+B049,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, upper row, 2nd from left",272,534,sure
+B050,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, upper row, 3rd from left",404,534,sure
+B051,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, lower row, 1st from left",140,666,sure
+B052,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, lower row, 2nd from left",272,666,sure
+B053,D9,Light fixture,"Light fixture, type D9",,"Bottom-left tables, lower row, 3rd from left",404,666,sure
+B054,D-NL,Light fixture,"Light fixture, type D, night light",,"Bottom middle, left of the round counter",640,636,sure
+B055,D,Light fixture,"Light fixture, type D",,"Bottom middle, right of the round counter",866,636,sure
+B056,D9,Light fixture,"Light fixture, type D9",,"Bottom-right tables, upper row, 1st from left",1100,534,sure
+B057,D9,Light fixture,"Light fixture, type D9",,"Bottom-right tables, upper row, 2nd from left",1232,534,sure
+B058,D9,Light fixture,"Light fixture, type D9",,"Bottom-right tables, lower row, 1st from left",1100,666,sure
+B059,D9,Light fixture,"Light fixture, type D9",,"Bottom-right tables, lower row, 2nd from left",1232,666,sure
