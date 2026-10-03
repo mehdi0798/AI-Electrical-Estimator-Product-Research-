@@ -4,6 +4,7 @@ import CATALOG from './config/catalog.json'
 import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
+import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './lib/edits'
 import {
   boxPercent,
   clientToImage,
@@ -34,10 +35,40 @@ import {
 const euro = (n) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n)
 
-// Add-dialog names, in catalog order. Each name has exactly one type and one
-// unit price (src/config/catalog.json, built from handoff/catalog.csv).
-const NAME_OPTIONS = CATALOG.map((e) => e.name)
-const CATALOG_BY_NAME = Object.fromEntries(CATALOG.map((e) => [e.name, e]))
+// Catalog lookups for the Type -> Name picker (Edit and Add dialogs). Each name
+// has exactly one type and one unit price (src/config/catalog.json, built from
+// handoff/catalog.csv). Nothing is hardcoded here.
+const CAT = catalogIndex(CATALOG)
+
+// The shared Type -> Name picker. Type only narrows the names; the chosen NAME
+// decides the saved type and price. Changing the type picks that type's first name.
+function TypeNamePicker({ name, onChange }) {
+  const type = CAT.byName.get(name).type
+  return (
+    <>
+      <label className="field">
+        <span>Type</span>
+        <select value={type} onChange={(e) => onChange(CAT.namesByType.get(e.target.value)[0])} autoFocus>
+          {CAT.types.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>Name</span>
+        <select value={name} onChange={(e) => onChange(e.target.value)}>
+          {CAT.namesByType.get(type).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
+  )
+}
 
 // Sheet order per CLAUDE.md: practice first, then A = 1→6, B = 6→1.
 const REAL_SHEETS = ['sheet1', 'sheet2', 'sheet3', 'sheet4', 'sheet5', 'sheet6']
@@ -321,9 +352,20 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const [placing, setPlacing] = useState(false)
   // Draft pin awaiting the popover's Confirm/Cancel. { x, y } in ORIGINAL IMAGE PIXELS.
   const [draft, setDraft] = useState(null)
-  const [draftName, setDraftName] = useState(NAME_OPTIONS[0])
+  const [draftName, setDraftName] = useState(CATALOG[0].name)
   // Confirmed additions, shown in "Your Additions" (NOT sorted into the ranked list).
   const [additions, setAdditions] = useState(() => savedSheet?.additions ?? [])
+  // --- Edit (step 6) ---
+  // Edits overlay: { [item.id]: name }. The sheet's items are never changed.
+  const [edits, setEdits] = useState(() => savedSheet?.edits ?? {})
+  // The row being edited ({ id }) and the name picked in the dialog so far.
+  const [editing, setEditing] = useState(null)
+  const [editName, setEditName] = useState(null)
+  // Cancel, Escape or backdrop: no change, no event.
+  const cancelEdit = () => {
+    setEditing(null)
+    setEditName(null)
+  }
   const imgRef = useRef(null)
   const scrollRef = useRef(null) // the drawing's scroll box (scroll = pan)
 
@@ -373,9 +415,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   // features.resume: keep this sheet's state saved so a reload can restore it.
   useEffect(() => {
     if (FEATURES.resume) {
-      saveSheetState(sheetId, { statuses, additions, analysed: analysis === 'done' })
+      saveSheetState(sheetId, { statuses, additions, edits, analysed: analysis === 'done' })
     }
-  }, [sheetId, statuses, additions, analysis])
+  }, [sheetId, statuses, additions, edits, analysis])
 
   // Submit → confirm dialog (step 5).
   const [confirming, setConfirming] = useState(false)
@@ -406,11 +448,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     }
   }, [sheetId])
 
-  // Escape exits placement mode (and clears any draft pin). Logs nothing.
+  // Escape exits placement mode (and clears any draft pin), or closes the edit
+  // dialog without changing anything. Logs nothing.
   useEffect(() => {
-    if (!placing && !draft) return
+    if (!placing && !draft && !editing) return
     const onKey = (e) => {
-      if (e.key === 'Escape') cancelPlacement()
+      if (e.key !== 'Escape') return
+      if (editing) cancelEdit()
+      else cancelPlacement()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -467,7 +512,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       naturalHeight: img.naturalHeight,
     })
     setDraft({ x, y })
-    setDraftName(NAME_OPTIONS[0])
+    setDraftName(CATALOG[0].name)
   }
 
   // Confirm the popover: append a row to "Your Additions", log add_missing.
@@ -478,10 +523,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     const addition = {
       id,
       name: draftName,
-      type: CATALOG_BY_NAME[draftName].type,
+      type: CAT.byName.get(draftName).type,
       x: draft.x,
       y: draft.y,
-      unit_price: CATALOG_BY_NAME[draftName].unit_price,
+      unit_price: CAT.byName.get(draftName).unit_price,
     }
     setAdditions((prev) => [...prev, addition])
     logEvent({
@@ -514,16 +559,34 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     )
   }
 
-  // Hard rule 4: sorted by confidence, highest first; shown in full.
-  const items = [...sheet.items].sort((a, b) => b.confidence - a.confidence)
+  // Hard rule 4: sorted by the ORIGINAL confidence, highest first; shown in full.
+  // Edits are applied after sorting and never touch id, x, y or confidence, so an
+  // edit cannot move a row or its jump target.
+  const items = [...sheet.items]
+    .sort((a, b) => b.confidence - a.confidence)
+    .map((item) => displayItem(item, edits, CAT.byName))
 
   // Live bid total: sum of unit_price over every detected row that is NOT rejected
-  // (untouched rows count) PLUS every confirmed addition.
-  const bidTotal =
-    items.reduce(
-      (sum, item) => (statuses[item.id] === 'rejected' ? sum : sum + item.unit_price),
-      0,
-    ) + additions.reduce((sum, a) => sum + a.unit_price, 0)
+  // (untouched rows count, edited rows at their edited price) PLUS every addition.
+  const bidTotal = computeBid(items, statuses, additions)
+
+  // --- Edit (step 6) ---
+  const editingItem = editing ? items.find((it) => it.id === editing.id) : null
+  const startEdit = (item) => {
+    setEditing({ id: item.id })
+    setEditName(item.name) // the name shown now
+  }
+  // Log from the handler, NOT inside a state updater (StrictMode runs updaters
+  // twice in dev). A no-op logs nothing. The review status is never touched.
+  const confirmEdit = () => {
+    const original = sheet.items.find((it) => it.id === editing.id)
+    const r = applyEdit({ edits, item: original, newName: editName, byName: CAT.byName })
+    if (r) {
+      logEvent(r.event)
+      setEdits(r.edits)
+    }
+    cancelEdit()
+  }
 
   // Submit → open the confirm dialog, logging the bid in new_value (step 5).
   const submitSheet = () => {
@@ -817,6 +880,19 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                       >
                         ✕
                       </button>
+                      <button
+                        type="button"
+                        className="act edit"
+                        title="Edit"
+                        aria-label="Edit"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (placing) return
+                          startEdit(item)
+                        }}
+                      >
+                        ✎
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -885,21 +961,34 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
         <div className="popover-backdrop" onClick={cancelPlacement}>
           <div className="popover" onClick={(e) => e.stopPropagation()}>
             <div className="popover-title">Add missing item</div>
-            <label className="field">
-              <span>Name</span>
-              <select value={draftName} onChange={(e) => setDraftName(e.target.value)} autoFocus>
-                {NAME_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <TypeNamePicker name={draftName} onChange={setDraftName} />
             <div className="popover-actions">
               <button type="button" className="btn ghost" onClick={cancelPlacement}>
                 Cancel
               </button>
               <button type="button" className="btn primary" onClick={confirmAddition}>
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit dialog (step 6): same picker as Add missing. */}
+      {editingItem && (
+        <div className="popover-backdrop" onClick={cancelEdit}>
+          <div className="popover" onClick={(e) => e.stopPropagation()}>
+            <div className="popover-title">Edit item</div>
+            <p className="popover-sub">
+              Now: {editingItem.name} · {editingItem.type} · {euro(editingItem.unit_price)}
+            </p>
+            <TypeNamePicker name={editName} onChange={setEditName} />
+            <p className="popover-sub">Unit price: {euro(CAT.byName.get(editName).unit_price)}</p>
+            <div className="popover-actions">
+              <button type="button" className="btn ghost" onClick={cancelEdit}>
+                Cancel
+              </button>
+              <button type="button" className="btn primary" onClick={confirmEdit}>
                 Confirm
               </button>
             </div>

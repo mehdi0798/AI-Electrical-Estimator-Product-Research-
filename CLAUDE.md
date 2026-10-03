@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 6 below.
+- NOW: v0.2, real sheets. Next: step 7 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -77,6 +77,12 @@ S<n>-1...N in list order. Practice keeps its placeholder items until step 8.
 Step 5 done (branch only): click-to-jump checked on all 312 rows at 1920×1080
 and 1366×768 from several scroll positions; the box is `jumpBoxPx` = 32 image
 px (at 48, 29 boxes also covered a neighbouring symbol; at 32, two on sheet 4).
+Step 6 done (branch only): ✎ on a row opens Edit with a Type -> Name picker
+(the same picker is used by Add missing). The name sets type and price from
+the catalog. Edits are an overlay on the unchanged sheet items: id, x, y,
+confidence, order, jump target and review status never change. Logged as
+`edited` (old_value/new_value = names); a no-op or cancel logs nothing.
+`score.js` does not report real items edited yet (decide before step 7).
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.

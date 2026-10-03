@@ -287,7 +287,7 @@
   text-align: right;
 }
 .list-columns .col-actions {
-  width: 62px;
+  width: 92px;
   text-align: center;
 }
 
@@ -362,7 +362,7 @@
 .item-actions {
   display: flex;
   gap: var(--s1);
-  width: 62px;
+  width: 92px;
   justify-content: flex-end;
 }
 .act {
@@ -387,6 +387,10 @@
 .act.reject:hover {
   border-color: var(--danger);
   color: var(--danger);
+}
+.act.edit:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .act.accept.active {
   background: var(--success);
@@ -572,6 +576,11 @@
   font-weight: 600;
   font-size: var(--text-lg);
   margin-bottom: var(--s4);
+}
+.popover-sub {
+  margin: 0 0 var(--s4);
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 .popover-actions {
   display: flex;

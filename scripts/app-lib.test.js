@@ -22,6 +22,8 @@ import {
   scrollToCenter,
   viewportCenterImage,
 } from '../src/lib/geometry.js'
+import { applyEdit, bidTotal, catalogIndex, displayItem } from '../src/lib/edits.js'
+import CATALOG from '../src/config/catalog.json' with { type: 'json' }
 
 let passed = 0
 function test(name, fn) {
@@ -241,6 +243,120 @@ test('32 px box: on the real sheets only the two sheet 4 items 12 px apart share
   }
   assert.equal(shared.length, 2, shared.join(', '))
   assert.ok(shared.every((id) => id.startsWith('sheet4 ')), shared.join(', '))
+})
+
+console.log('edit action (v0.2 step 6)')
+
+const CAT = catalogIndex(CATALOG)
+// The list exactly as the app builds it: sorted by ORIGINAL confidence, then the
+// edits overlay applied (App.jsx ReviewScreen).
+const view = (items, edits) =>
+  [...items].sort((a, b) => b.confidence - a.confidence).map((it) => displayItem(it, edits, CAT.byName))
+const ITEM = { id: 'S9-4', name: 'D2', type: 'Light fixture', x: 120, y: 340, confidence: 0.83, unit_price: 320 }
+const edit = (edits, newName, item = ITEM) => applyEdit({ edits, item, newName, byName: CAT.byName })
+
+test('catalog index: 9 types, 38 names, in catalog order, nothing hardcoded', () => {
+  assert.equal(CAT.types.length, 9)
+  assert.deepEqual([...CAT.namesByType.values()].flat().sort(), CATALOG.map((e) => e.name).sort())
+  assert.equal(CAT.types[0], CATALOG[0].type)
+  for (const [type, names] of CAT.namesByType) for (const n of names) assert.equal(CAT.byName.get(n).type, type)
+})
+
+test('an edit sets the catalog name, type and price; id, x, y, confidence untouched; one event', () => {
+  const r = edit({}, 'Duplex receptacle')
+  assert.deepEqual(r.edits, { 'S9-4': 'Duplex receptacle' })
+  assert.deepEqual(r.event, { action: 'edited', item_id: 'S9-4', old_value: 'D2', new_value: 'Duplex receptacle' })
+  const shown = displayItem(ITEM, r.edits, CAT.byName)
+  assert.deepEqual(shown, { ...ITEM, name: 'Duplex receptacle', type: 'Receptacle', unit_price: 140 })
+  assert.equal(ITEM.name, 'D2') // the original item is never changed
+})
+
+test('no-op (the name already shown): no change, no event', () => {
+  assert.equal(edit({}, 'D2'), null)
+  assert.equal(edit({ 'S9-4': 'E1' }, 'E1'), null)
+})
+
+test('a name not in the catalog is refused', () => {
+  assert.throws(() => edit({}, 'Lamp'), /not in the catalog/)
+})
+
+test('editing back to the original name removes the overlay entry', () => {
+  const r = edit({ 'S9-4': 'E1', 'S9-7': 'H' }, 'D2')
+  assert.deepEqual(r.edits, { 'S9-7': 'H' })
+  assert.deepEqual(r.event, { action: 'edited', item_id: 'S9-4', old_value: 'E1', new_value: 'D2' })
+})
+
+test('chain D2 -> E1 -> D2: each change logs once, old_value = the name shown just before', () => {
+  let edits = {}
+  const events = []
+  for (const n of ['E1', 'E1', 'D2', 'D2']) {
+    const r = edit(edits, n)
+    if (r) {
+      edits = r.edits
+      events.push(r.event)
+    }
+  }
+  assert.deepEqual(events, [
+    { action: 'edited', item_id: 'S9-4', old_value: 'D2', new_value: 'E1' },
+    { action: 'edited', item_id: 'S9-4', old_value: 'E1', new_value: 'D2' },
+  ])
+  assert.deepEqual(edits, {})
+})
+
+test('editing never changes the review status (accepted, rejected, unreviewed)', () => {
+  const items = [ITEM, { ...ITEM, id: 'S9-5', x: 10 }, { ...ITEM, id: 'S9-6', x: 20 }]
+  const statuses = { 'S9-4': 'accepted', 'S9-5': 'rejected' } // S9-6 unreviewed
+  const frozen = JSON.stringify(statuses)
+  let edits = {}
+  for (const it of items) edits = applyEdit({ edits, item: it, newName: 'H', byName: CAT.byName }).edits
+  // applyEdit has no access to statuses: it cannot accept, reject, delete or add.
+  assert.equal(JSON.stringify(statuses), frozen)
+  assert.equal(statuses['S9-4'], 'accepted')
+  assert.equal(statuses['S9-5'], 'rejected')
+  assert.equal(statuses['S9-6'], undefined)
+  assert.equal(view(items, edits).length, 3)
+})
+
+test('bid: edited rows count at the edited price; a rejected row stays out whatever its name', () => {
+  const items = [ITEM, { ...ITEM, id: 'S9-5', x: 10 }, { ...ITEM, id: 'S9-6', x: 20 }]
+  const statuses = { 'S9-5': 'rejected' }
+  const adds = [{ unit_price: 95 }]
+  assert.equal(bidTotal(view(items, {}), statuses, adds), 320 + 320 + 95)
+  const edits = { 'S9-4': 'FE', 'S9-5': 'IN-FAN' } // 3800 and 680
+  assert.equal(bidTotal(view(items, edits), statuses, adds), 3800 + 320 + 95)
+})
+
+test('all 312 real items: editing every row keeps id, x, y, confidence, order and jump target', () => {
+  let n = 0
+  for (const s of REAL) {
+    const before = view(s.items, {})
+    let edits = {}
+    before.forEach((row, i) => {
+      // A different catalog name for each row (never its own).
+      const others = CATALOG.filter((e) => e.name !== row.name)
+      const newName = others[i % others.length].name
+      const original = s.items.find((it) => it.id === row.id)
+      const r = applyEdit({ edits, item: original, newName, byName: CAT.byName })
+      assert.deepEqual(r.event, { action: 'edited', item_id: row.id, old_value: row.name, new_value: newName })
+      edits = r.edits
+    })
+    const after = view(s.items, edits)
+    const keep = (r) => ({ id: r.id, x: r.x, y: r.y, confidence: r.confidence })
+    assert.deepEqual(after.map(keep), before.map(keep), s.id)
+    after.forEach((row, i) => {
+      const e = CAT.byName.get(row.name)
+      assert.notEqual(row.name, before[i].name, `${s.id} ${row.id}`)
+      assert.equal(row.type, e.type)
+      assert.equal(row.unit_price, e.unit_price)
+      // The jump target is the row's x,y: same box as before the edit.
+      const pos = { x: row.x, y: row.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight }
+      assert.deepEqual(boxPercent(pos), boxPercent({ ...pos, x: before[i].x, y: before[i].y }))
+      n++
+    })
+    // The sheet file's items are untouched.
+    assert.deepEqual(s.items.map((it) => it.name), JSON.parse(readFileSync(new URL(`../public/sheets/${s.id}.json`, import.meta.url), 'utf8')).items.map((it) => it.name))
+  }
+  assert.equal(n, 312)
 })
 
 console.log('zoom (features.zoom, Hard rule 7)')
