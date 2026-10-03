@@ -47,6 +47,55 @@ export function readCatalog(text) {
   return { types, errors }
 }
 
+// The nine item types (CLAUDE.md, "Decisions already made").
+export const TYPES = [
+  'Light fixture',
+  'Track light head',
+  'Exit sign',
+  'Ceiling fan',
+  'Receptacle',
+  'Switch',
+  'Sensor',
+  'Junction box',
+  'Panelboard',
+]
+
+// catalog.csv -> the app catalog (v0.2 step 3): [{ name, type, unit_price }] in
+// CSV order. ONLY these three fields: count_all_sheets and sheets are baseline
+// truth and must never ship (Hard rule 6). Prices are taken as given: a price
+// that would not read back as the exact CSV text is refused, never reformatted.
+// Returns { catalog, errors }; catalog is null on any error.
+export function buildCatalog(text) {
+  const { header, records } = csvObjects(text)
+  const errors = []
+  for (const col of ['name', 'type', 'unit_price']) {
+    if (!header.includes(col)) errors.push(`catalog.csv: missing column "${col}"`)
+  }
+  if (errors.length) return { catalog: null, errors }
+  const seen = new Set()
+  const catalog = records.map((r, i) => {
+    const at = `catalog.csv: row ${i + 2}${r.name ? ` (${r.name})` : ''}`
+    if (!r.name) errors.push(`${at}: no name`)
+    else if (seen.has(r.name)) errors.push(`${at}: name listed twice`)
+    seen.add(r.name)
+    if (!TYPES.includes(r.type)) errors.push(`${at}: type "${r.type}" is not one of the nine types`)
+    const price = Number(r.unit_price)
+    if (!/^\d+(\.\d+)?$/.test(r.unit_price) || !(price > 0) || String(price) !== r.unit_price) {
+      errors.push(`${at}: unit_price "${r.unit_price}" is not a plain positive number`)
+    }
+    return { name: r.name, type: r.type, unit_price: price }
+  })
+  if (catalog.length === 0) errors.push('catalog.csv: no rows')
+  return { catalog: errors.length ? null : catalog, errors }
+}
+
+// One entry per line, no timestamp: the same CSV always gives the same file.
+export function formatCatalog(catalog) {
+  const line = (e) =>
+    `  { "name": ${JSON.stringify(e.name)}, "type": ${JSON.stringify(e.type)}, "unit_price": ${e.unit_price} }`
+  return `[\n${catalog.map(line).join(',\n')}\n]\n`
+}
+
 // Build one baseline. Returns { baseline, errors }; baseline is null on any error.
 //   sheet:      'sheet1' ... 'sheet6'
 //   itemsText:  contents of baseline_lists/<sheet>.items.csv

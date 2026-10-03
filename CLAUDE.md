@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 3 below.
+- NOW: v0.2, real sheets. Next: step 4 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -66,15 +66,17 @@ removable), live bid total in € (sum of unit_price over every row not
 rejected, added items included).
 Click a row: the drawing scrolls to that item and boxes it (Hard rule 3),
 if its x,y lies inside the image.
-Step 2 done: items carry `name` and `type`; the placeholder lists use
-`type = Placeholder` and the Add dialog picks a name from `item_types.json`
-until step 3.
+Steps 2–3 done: items carry `name` and `type`. The Add dialog picks a name
+from `src/config/catalog.json` (38 names, built from `handoff/catalog.csv` by
+`npm run import-catalog`); the added item takes that name's type and price.
+The placeholder lists still use `type = Placeholder` until step 4.
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.
 Scoring: `scripts/score.js` on a CSV export of `event_log`.
 Tools: `npm test`; `npm run validate` (sheets against answer keys, used in
-step 7). Also on main: the design pass, and code for `resume`,
+step 7); `npm run import-baselines` and `npm run import-catalog` (local only,
+read `handoff/`). Also on main: the design pass, and code for `resume`,
 `analyseAnimation` and `zoom` (flags off).
 
 ---

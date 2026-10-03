@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './App.css'
-import ITEM_TYPES from './config/item_types.json'
+import CATALOG from './config/catalog.json'
 import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
@@ -34,12 +34,10 @@ import {
 const euro = (n) =>
   new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(n)
 
-// Add-dialog names + unit-price lookup. Until step 3, item_types.json still holds
-// the placeholder labels (its `type` key is the name); every added item gets the
-// type PLACEHOLDER_TYPE, same as the placeholder sheet rows.
-const NAME_OPTIONS = ITEM_TYPES.map((t) => t.type)
-const PRICE_BY_NAME = Object.fromEntries(ITEM_TYPES.map((t) => [t.type, t.unit_price]))
-const PLACEHOLDER_TYPE = 'Placeholder'
+// Add-dialog names, in catalog order. Each name has exactly one type and one
+// unit price (src/config/catalog.json, built from handoff/catalog.csv).
+const NAME_OPTIONS = CATALOG.map((e) => e.name)
+const CATALOG_BY_NAME = Object.fromEntries(CATALOG.map((e) => [e.name, e]))
 
 // Sheet order per CLAUDE.md: practice first, then A = 1→6, B = 6→1.
 const REAL_SHEETS = ['sheet1', 'sheet2', 'sheet3', 'sheet4', 'sheet5', 'sheet6']
@@ -480,10 +478,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     const addition = {
       id,
       name: draftName,
-      type: PLACEHOLDER_TYPE,
+      type: CATALOG_BY_NAME[draftName].type,
       x: draft.x,
       y: draft.y,
-      unit_price: PRICE_BY_NAME[draftName] ?? 0,
+      unit_price: CATALOG_BY_NAME[draftName].unit_price,
     }
     setAdditions((prev) => [...prev, addition])
     logEvent({
