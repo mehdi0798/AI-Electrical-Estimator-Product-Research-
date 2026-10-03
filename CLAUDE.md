@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 4 below.
+- NOW: v0.2, real sheets. Next: step 5 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -69,14 +69,19 @@ if its x,y lies inside the image.
 Steps 2–3 done: items carry `name` and `type`. The Add dialog picks a name
 from `src/config/catalog.json` (38 names, built from `handoff/catalog.csv` by
 `npm run import-catalog`); the added item takes that name's type and price.
-The placeholder lists still use `type = Placeholder` until step 4.
+Step 4 done (branch only, no errors planted): `npm run build-sheets` builds
+`public/sheets/sheet1.json` ... `sheet6.json` from the baselines. Titles are
+"Sheet 1" ... "Sheet 6"; confidence is round(0.70 + u × 0.29, 2), u from
+sha256("voltra-v0.2|sheet|name|x|y"), the same rule for all sheets; ids are
+S<n>-1...N in list order. Practice keeps its placeholder items until step 8.
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.
 Scoring: `scripts/score.js` on a CSV export of `event_log`.
 Tools: `npm test`; `npm run validate` (sheets against answer keys, used in
-step 7); `npm run import-baselines` and `npm run import-catalog` (local only,
-read `handoff/`). Also on main: the design pass, and code for `resume`,
+step 7); `npm run import-baselines`, `npm run import-catalog` and
+`npm run build-sheets` (local only, read `handoff/` or `baseline/`). Also on
+main: the design pass, and code for `resume`,
 `analyseAnimation` and `zoom` (flags off).
 
 ---
