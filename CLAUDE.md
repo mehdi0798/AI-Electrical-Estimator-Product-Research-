@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 5 below.
+- NOW: v0.2, real sheets. Next: step 6 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -74,6 +74,9 @@ Step 4 done (branch only, no errors planted): `npm run build-sheets` builds
 "Sheet 1" ... "Sheet 6"; confidence is round(0.70 + u × 0.29, 2), u from
 sha256("voltra-v0.2|sheet|name|x|y"), the same rule for all sheets; ids are
 S<n>-1...N in list order. Practice keeps its placeholder items until step 8.
+Step 5 done (branch only): click-to-jump checked on all 312 rows at 1920×1080
+and 1366×768 from several scroll positions; the box is `jumpBoxPx` = 32 image
+px (at 48, 29 boxes also covered a neighbouring symbol; at 32, two on sheet 4).
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.

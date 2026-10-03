@@ -2,6 +2,8 @@
 // browser). Run: node scripts/app-lib.test.js
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import FEATURES from '../src/config/features.json' with { type: 'json' }
 import {
   SESSION_KEY,
   clearSession,
@@ -172,6 +174,73 @@ test('boxPercent: one square box centred on the item, clipped to the image', () 
 test('boxPercent: no box for a point outside the image', () => {
   assert.equal(boxPercent({ x: 1000, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
   assert.equal(boxPercent({ x: 10, y: -1, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
+})
+
+console.log('click-to-jump on the six real sheets (v0.2 step 5)')
+
+// The drawing pane's visible size (clientWidth x clientHeight, scrollbars
+// excluded), measured in the built app at the two screen sizes in CLAUDE.md.
+const PANES = { '1920x1080': { viewWidth: 1386, viewHeight: 990 }, '1366x768': { viewWidth: 832, viewHeight: 678 } }
+const REAL = [1, 2, 3, 4, 5, 6].map((n) => {
+  const sheet = JSON.parse(readFileSync(new URL(`../public/sheets/sheet${n}.json`, import.meta.url), 'utf8'))
+  const png = readFileSync(new URL(`../public${sheet.image}`, import.meta.url))
+  // naturalWidth/naturalHeight straight from the PNG header, never hardcoded.
+  return { ...sheet, naturalWidth: png.readUInt32BE(16), naturalHeight: png.readUInt32BE(20) }
+})
+const BOX = FEATURES.jumpBoxPx
+const pct = (s) => Number(s.replace('%', '')) / 100
+// boxPercent rounds to 4 decimals of a percent: at most ~0.001 image px.
+const EPS = 0.01
+
+test('jumpBoxPx is 32', () => assert.equal(BOX, 32))
+
+test('all 312 items: after the jump the item and its whole box are inside the visible pane', () => {
+  let n = 0
+  for (const s of REAL) {
+    for (const [screen, pane] of Object.entries(PANES)) {
+      for (const it of s.items) {
+        const { left, top } = scrollToCenter({ x: it.x, y: it.y, zoom: 1, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight, ...pane })
+        const b = boxPercent({ x: it.x, y: it.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight })
+        const at = `${screen} ${s.id} ${it.id}`
+        assert.ok(b, at)
+        const bl = pct(b.left) * s.naturalWidth
+        const bt = pct(b.top) * s.naturalHeight
+        const br = bl + pct(b.width) * s.naturalWidth
+        const bb = bt + pct(b.height) * s.naturalHeight
+        // The box contains the item and stays on the image.
+        assert.ok(bl <= it.x + EPS && it.x <= br + EPS && bt <= it.y + EPS && it.y <= bb + EPS, at)
+        assert.ok(bl >= -EPS && bt >= -EPS && br <= s.naturalWidth + EPS && bb <= s.naturalHeight + EPS, at)
+        // Item and whole box inside the visible part of the pane.
+        assert.ok(bl >= left - EPS && br <= left + pane.viewWidth + EPS, `${at}: box x ${bl}-${br}, view ${left}+${pane.viewWidth}`)
+        assert.ok(bt >= top - EPS && bb <= top + pane.viewHeight + EPS, `${at}: box y ${bt}-${bb}, view ${top}+${pane.viewHeight}`)
+        n++
+      }
+    }
+  }
+  assert.equal(n, 312 * 2)
+})
+
+test('all 312 items: an unclipped box is centred on the item to within 1 image pixel', () => {
+  for (const s of REAL) {
+    for (const it of s.items) {
+      const b = boxPercent({ x: it.x, y: it.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight })
+      const cx = (pct(b.left) + pct(b.width) / 2) * s.naturalWidth
+      const cy = (pct(b.top) + pct(b.height) / 2) * s.naturalHeight
+      const clipped = it.x < BOX / 2 || it.y < BOX / 2 || it.x > s.naturalWidth - BOX / 2 || it.y > s.naturalHeight - BOX / 2
+      if (!clipped) assert.ok(Math.abs(cx - it.x) <= 1 && Math.abs(cy - it.y) <= 1, `${s.id} ${it.id}: centre ${cx},${cy}`)
+    }
+  }
+})
+
+test('32 px box: on the real sheets only the two sheet 4 items 12 px apart share a box', () => {
+  const shared = []
+  for (const s of REAL) {
+    for (const a of s.items) {
+      if (s.items.some((b) => b !== a && Math.abs(a.x - b.x) < BOX / 2 && Math.abs(a.y - b.y) < BOX / 2)) shared.push(`${s.id} ${a.id}`)
+    }
+  }
+  assert.equal(shared.length, 2, shared.join(', '))
+  assert.ok(shared.every((id) => id.startsWith('sheet4 ')), shared.join(', '))
 })
 
 console.log('zoom (features.zoom, Hard rule 7)')

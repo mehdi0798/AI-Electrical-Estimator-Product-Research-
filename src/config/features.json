@@ -4,6 +4,6 @@
   "analyseAnimation": false,
   "analyseDurationMs": 4000,
   "clickToJump": true,
-  "jumpBoxPx": 48,
+  "jumpBoxPx": 32,
   "zoom": false
 }
