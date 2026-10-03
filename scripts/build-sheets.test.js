@@ -20,8 +20,14 @@ const sha = (buf) => createHash('sha256').update(buf).digest('hex')
 const CATALOG = readJson(join(root, 'src', 'config', 'catalog.json'))
 const BY_NAME = new Map(CATALOG.map((e) => [e.name, e]))
 const baseline = (s) => readJson(join(root, 'baseline', `${s}.baseline.json`))
-const sheetText = (s) => readFileSync(join(root, 'public', 'sheets', `${s}.json`), 'utf8')
 const pngSha = (dir, s) => sha(readFileSync(join(dir, `${s}.png`)))
+// Since step 7 public/sheets/ holds the PLANTED lists (tested in plant.test.js).
+// These step 4 tests check the unplanted builder output, built here in memory.
+const sheetText = (s) => {
+  const r = buildSheet({ sheet: s, baseline: baseline(s), catalog: CATALOG, pngSha: pngSha(join(root, 'public', 'sheets'), s) })
+  assert.deepEqual(r.errors, [])
+  return formatSheet(r.sheet)
+}
 
 let passed = 0
 function test(name, fn) {
@@ -37,12 +43,14 @@ function test(name, fn) {
 
 console.log('public/sheets/sheet1..6.json')
 
-test('each sheet file is exactly what build-sheets writes (no hand edits)', () => {
-  for (const s of SHEETS) {
-    const r = buildSheet({ sheet: s, baseline: baseline(s), catalog: CATALOG, pngSha: pngSha(join(root, 'public', 'sheets'), s) })
-    assert.deepEqual(r.errors, [])
-    assert.equal(formatSheet(r.sheet), sheetText(s), s)
-  }
+test('the unplanted build is byte-stable (same input, same file)', () => {
+  for (const s of SHEETS) assert.equal(sheetText(s), sheetText(s), s)
+})
+
+test('build-sheets refuses to overwrite the planted public sheets once answer-key/ exists', () => {
+  const r = spawnSync(process.execPath, [join(here, 'build-sheets.js')], { encoding: 'utf8' })
+  assert.equal(r.status, 1)
+  assert.match(r.stderr, /answer-key\/ exists/)
 })
 
 test('312 items: counts 52/45/55/54/59/47, same name and x,y as the baseline, nothing added or dropped', () => {

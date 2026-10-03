@@ -40,6 +40,12 @@ for (let i = 0; i < args.length; i++) {
   i++
 }
 
+// After step 7 the public sheets carry the planted errors; rebuilding the
+// unplanted lists over them would silently remove every manipulation.
+if (opts.sheetsDir === join(root, 'public', 'sheets') && existsSync(join(root, 'answer-key'))) {
+  fail('answer-key/ exists: the public sheets are planted (step 7). Use npm run plant instead.')
+}
+
 const read = (path, binary = false) => {
   if (!existsSync(path)) fail(`missing file ${path}`)
   return binary ? readFileSync(path) : readFileSync(path, 'utf8')

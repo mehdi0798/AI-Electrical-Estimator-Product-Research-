@@ -1,0 +1,135 @@
+{
+  "_note": "Step 7 planting plan (researcher-only, never shipped). Per sheet: 2 pairs, each one UNDER (baseline id, row removed) and one OVER (phantom name, x,y in original image pixels) at the same catalog price. Read only by scripts/plant.js.",
+  "sheet1": {
+    "pairs": [
+      {
+        "pair_id": "1A",
+        "under": "B045",
+        "over": {
+          "name": "E2-NL",
+          "x": 195,
+          "y": 286
+        }
+      },
+      {
+        "pair_id": "1B",
+        "under": "B005",
+        "over": {
+          "name": "E2",
+          "x": 726,
+          "y": 152
+        }
+      }
+    ]
+  },
+  "sheet2": {
+    "pairs": [
+      {
+        "pair_id": "2A",
+        "under": "B021",
+        "over": {
+          "name": "E1-NL",
+          "x": 270,
+          "y": 102
+        }
+      },
+      {
+        "pair_id": "2B",
+        "under": "B038",
+        "over": {
+          "name": "E1-NL",
+          "x": 626,
+          "y": 402
+        }
+      }
+    ]
+  },
+  "sheet3": {
+    "pairs": [
+      {
+        "pair_id": "3A",
+        "under": "B039",
+        "over": {
+          "name": "Duplex receptacle",
+          "x": 420,
+          "y": 302
+        }
+      },
+      {
+        "pair_id": "3B",
+        "under": "B032",
+        "over": {
+          "name": "Duplex receptacle",
+          "x": 1690,
+          "y": 310
+        }
+      }
+    ]
+  },
+  "sheet4": {
+    "pairs": [
+      {
+        "pair_id": "4A",
+        "under": "B024",
+        "over": {
+          "name": "D8",
+          "x": 814,
+          "y": 298
+        }
+      },
+      {
+        "pair_id": "4B",
+        "under": "B028",
+        "over": {
+          "name": "D8",
+          "x": 630,
+          "y": 642
+        }
+      }
+    ]
+  },
+  "sheet5": {
+    "pairs": [
+      {
+        "pair_id": "5A",
+        "under": "B049",
+        "over": {
+          "name": "D9",
+          "x": 124,
+          "y": 608
+        }
+      },
+      {
+        "pair_id": "5B",
+        "under": "B040",
+        "over": {
+          "name": "D-NL",
+          "x": 1168,
+          "y": 603
+        }
+      }
+    ]
+  },
+  "sheet6": {
+    "pairs": [
+      {
+        "pair_id": "6A",
+        "under": "B002",
+        "over": {
+          "name": "Duplex receptacle, above counter",
+          "x": 616,
+          "y": 542
+        }
+      },
+      {
+        "pair_id": "6B",
+        "under": "B015",
+        "over": {
+          "name": "Duplex receptacle, above counter",
+          "x": 602,
+          "y": 930
+        }
+      }
+    ]
+  }
+}

@@ -188,6 +188,12 @@ test('OVER cost or x,y differing from its row is a warning', () => {
   assert.ok(r.warnings.some((w) => /key x,y \(31, 30\) differs/.test(w)))
 })
 
+test('UNDER whose x,y still has a row (under another id) is an error', () => {
+  const k = validKey()
+  Object.assign(k.manipulations[1], { x: 50, y: 50 }) // S9-5 sits at (50, 50)
+  assert.ok(hasError(run(validSheet(), k), /UNDER D1: a row still sits at the deleted item's x,y \(50, 50\)/))
+})
+
 test('UNDER whose id still has a row is an error', () => {
   const k = validKey()
   k.manipulations[1].id = 'S9-5'

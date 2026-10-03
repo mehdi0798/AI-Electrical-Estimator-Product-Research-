@@ -207,6 +207,9 @@ export function validateSheet({ sheet, key, imageSize, isPractice }) {
   // UNDER: a deleted item has no row at all (Hard rule 1)
   for (const m of unders) {
     if (byId.has(m.id)) errors.push(`UNDER ${m.id}: a row with this id is still in items (Hard rule 1)`)
+    if (isNum(m.x) && isNum(m.y) && items.some((it) => it?.x === m.x && it?.y === m.y)) {
+      errors.push(`UNDER ${m.id}: a row still sits at the deleted item's x,y (${m.x}, ${m.y}) (Hard rule 1)`)
+    }
   }
 
   // Pairs: exactly one UNDER and one OVER per pair_id

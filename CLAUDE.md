@@ -10,7 +10,7 @@
   names are still to confirm (end of `handoff/README.md`). Source: `handoff/`.
 - v0.2 is built on branch `v0.2`. Nothing goes to main until step 7 validates.
 - The old placeholder PNGs in `Experiment Design/Sheets/` are removed.
-- NOW: v0.2, real sheets. Next: step 7 below.
+- NOW: v0.2, real sheets. Next: step 8 below.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
@@ -82,14 +82,26 @@ Step 6 done (branch only): ✎ on a row opens Edit with a Type -> Name picker
 the catalog. Edits are an overlay on the unchanged sheet items: id, x, y,
 confidence, order, jump target and review status never change. Logged as
 `edited` (old_value/new_value = names); a no-op or cancel logs nothing.
-`score.js` does not report real items edited yet (decide before step 7).
+`score.js` does not report real items edited yet (to do before the first real session).
+Step 7 done (branch `v0.2` only): `npm run plant` reads `planting/plan.json`
+and writes `public/sheets/sheet1.json` ... `sheet6.json` (errors planted) and
+`answer-key/sheet1.key.json` ... `sheet6.key.json`. 2 UNDER + 2 OVER per sheet
+(12 + 12); in every pair the deleted item and the phantom have exactly the
+same catalog price. Same-name pairs are used on sheets 3, 4 and 5. Ids are
+assigned after planting (S<n>-1...N, no gap); every phantom is mid-list, never
+last, with the same seeded confidence rule as the real rows. `planting/` and
+`answer-key/` are outside `public/` and `src/` and never shipped.
+`npm run build-sheets` refuses to run once `answer-key/` exists (it would erase
+the planted errors). Until step 8, `npm run validate` exits 1 only because of
+the practice sheet; sheets 1–6 pass with no errors.
 Logging: localStorage queue, retried until Supabase confirms; the UI never
 waits on the network; events without participant or session label are
 quarantined, never sent, never deleted.
 Scoring: `scripts/score.js` on a CSV export of `event_log`.
 Tools: `npm test`; `npm run validate` (sheets against answer keys, used in
 step 7); `npm run import-baselines`, `npm run import-catalog` and
-`npm run build-sheets` (local only, read `handoff/` or `baseline/`). Also on
+`npm run build-sheets` (local only, read `handoff/` or `baseline/`);
+`npm run plant` (local only, reads `planting/` and `baseline/`). Also on
 main: the design pass, and code for `resume`,
 `analyseAnimation` and `zoom` (flags off).
 
@@ -247,15 +259,18 @@ and `new_value`.
 ## Decide BEFORE the first real session
 - Names still to confirm (listed at the end of `handoff/README.md`). A wrong
   name in the list would look like an error I did not plant.
-- Phantom placement rule (awaiting supervisor). Working default: a phantom's
-  x,y sits on a plausible spot where no such item exists (a gap in a run of
-  items, or a look-alike mark). Never on blank margin. Never on the exact
-  position of another listed item. Same rule for all 12 phantoms.
-- Deletion choice (awaiting supervisor). Working default: do not delete an
-  item that sits right next to an unlabelled mark, because an add placed on
-  that mark could be scored as a catch.
-- Scoring RADIUS, set from the real symbol spacing. Some symbols sit only
-  about 18 px apart (the outlet pairs on sheets 3 and 6).
+- Deletion rule (used in step 7, awaiting supervisor sign-off): UNDER in the
+  middle of a run, at least 60 px from its nearest listed symbol.
+- Phantom placement rule (used in step 7, awaiting supervisor sign-off): OVER
+  on a clean spot in a busy area, 45–90 px from its nearest symbol, at least
+  60 px from any same-name symbol, at least 150 px from both deletions, never
+  on a mark or tag. The two phantoms on a sheet are in different areas and
+  never adjacent in the list. Exact equal price in every pair. The same rules
+  for all 12, with no exceptions.
+- Scoring RADIUS: 30 px was used in step 7 (the deletion and phantom distances
+  above are built on it). Some symbols sit only about 18 px apart (the outlet
+  pairs on sheets 3 and 6).
+- `score.js` reports real items edited.
 - `resume`, `analyseAnimation`, `zoom`: on or off.
 - Same screen size, browser window and zoom for every session: what fits
   without scrolling changes what participants see.
