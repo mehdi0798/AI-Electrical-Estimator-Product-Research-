@@ -1,10 +1,11 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
-import { ZOOM_MAX, ZOOM_MIN, clampZoom, fitWidthZoom, scrollToCenter, stepZoom, zoomAroundPoint } from './lib/geometry'
+import { ZOOM_MAX, ZOOM_MIN, clampZoom, fitWidthZoom, imageToScreen, scrollToCenter, stepZoom, zoomAroundPoint } from './lib/geometry'
 
 // A zoomable, pannable image (v0.3 step 8). Used for the drawing; step 12 reuses
 // it for the legend. The <img> is drawn at naturalWidth x zoom (no CSS transform),
-// so scroll sizes and click maths stay exact. Children are overlays (box, dots)
-// positioned in % of the image box, so they follow every zoom.
+// so scroll sizes and click maths stay exact. `children` is a function of the
+// current zoom that returns the overlays (box, dots), placed at (x*zoom, y*zoom)
+// through the shared conversion in lib/geometry (Hard rule 7).
 //
 //   - opens at FIT WIDTH; refits on resize until the participant zooms
 //   - toolbar: - , % , + , Fit width (x1.25 steps, 25%-400%)
@@ -185,9 +186,9 @@ const ZoomableImage = forwardRef(function ZoomableImage(
               fit()
               onLoad?.()
             }}
-            style={zoom && natural ? { width: `${natural * zoom}px` } : { visibility: 'hidden' }}
+            style={zoom && natural ? { width: `${imageToScreen({ x: natural, y: 0, zoom }).left}px` } : { visibility: 'hidden' }}
           />
-          {zoom && children}
+          {zoom && children?.(zoom)}
         </div>
       </div>
       <div className="zi-toolbar" role="toolbar" aria-label="Zoom">

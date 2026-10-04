@@ -5,7 +5,7 @@ import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
 import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './lib/edits'
-import { boxPercent, clientToImage } from './lib/geometry'
+import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
 import ZoomableImage from './ZoomableImage'
 import {
   clearSession,
@@ -471,9 +471,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     const { x, y } = clientToImage({
       clientX: e.clientX,
       clientY: e.clientY,
-      rect: img.getBoundingClientRect(),
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
+      imageRect: img.getBoundingClientRect(),
+      zoom: viewerRef.current.getZoom(),
     })
     setDraft({ x, y })
     setDraftName(CATALOG[0].name)
@@ -588,27 +587,28 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
 
   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
   // with features.clickToJump. Derived from selectedId, so there can never be two.
+  // It scales with zoom (jumpBoxPx image px) but is never under 24 px on screen.
   const selectedItem = FEATURES.clickToJump ? items.find((it) => it.id === selectedId) : null
-  const jumpBox =
-    selectedItem && imgRef.current?.naturalWidth
-      ? boxPercent({
-          x: selectedItem.x,
-          y: selectedItem.y,
-          size: Number(FEATURES.jumpBoxPx) || 48,
-          naturalWidth: imgRef.current.naturalWidth,
-          naturalHeight: imgRef.current.naturalHeight,
-        })
-      : null
-
-  // Position the draft pin + addition dots back onto the rendered image using the
-  // same natural→rendered ratio (stays correct as the box scrolls/resizes).
-  const dotStyle = (pt) => {
+  const JUMP_BOX_MIN_SCREEN_PX = 24
+  const jumpBoxStyle = (zoom) => {
     const img = imgRef.current
-    if (!img || !img.naturalWidth) return { display: 'none' }
-    return {
-      left: `${(pt.x / img.naturalWidth) * 100}%`,
-      top: `${(pt.y / img.naturalHeight) * 100}%`,
-    }
+    if (!selectedItem || !img?.naturalWidth) return null
+    const r = jumpBoxRect({
+      x: selectedItem.x,
+      y: selectedItem.y,
+      zoom,
+      size: Number(FEATURES.jumpBoxPx) || 32,
+      minScreen: JUMP_BOX_MIN_SCREEN_PX,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+    })
+    return r && { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` }
+  }
+
+  // The draft pin and addition dots, at (x*zoom, y*zoom) via the shared conversion.
+  const dotStyle = (pt, zoom) => {
+    const p = imageToScreen({ x: pt.x, y: pt.y, zoom })
+    return { left: `${p.left}px`, top: `${p.top}px` }
   }
 
   return (
@@ -647,13 +647,20 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             onImageClick={handleDrawingClick}
             onLoad={() => setImgLoaded(true)}
           >
-            {/* Dots ONLY for participant-added items (Hard rule 3). */}
-            {additions.map((a) => (
-              <span key={a.id} className="map-dot" style={dotStyle(a)} />
-            ))}
-            {draft && <span className="map-dot draft" style={dotStyle(draft)} />}
-            {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
-            {jumpBox && <span className="jump-box" style={jumpBox} aria-hidden="true" />}
+            {(zoom) => {
+              const box = jumpBoxStyle(zoom)
+              return (
+                <>
+                  {/* Dots ONLY for participant-added items (Hard rule 3). */}
+                  {additions.map((a) => (
+                    <span key={a.id} className="map-dot" style={dotStyle(a, zoom)} />
+                  ))}
+                  {draft && <span className="map-dot draft" style={dotStyle(draft, zoom)} />}
+                  {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
+                  {box && <span className="jump-box" style={box} aria-hidden="true" />}
+                </>
+              )
+            }}
           </ZoomableImage>
         </section>
 
@@ -787,6 +794,13 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           )}
 
           <div className="add-bar">
+            {/* Placement hint: in the list column, never over the drawing, so no
+                symbol is ever covered while placing. The button below is Cancel. */}
+            {placing && !draft && (
+              <div className="placement-hint" role="status">
+                Click on the drawing to place the missing item
+              </div>
+            )}
             <button
               type="button"
               className={'add-btn' + (placing ? ' active' : '')}
@@ -799,16 +813,6 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           )}
         </aside>
       </main>
-
-      {/* Placement banner */}
-      {placing && !draft && (
-        <div className="placement-banner" role="status">
-          Click on the drawing to place the missing item
-          <button type="button" className="banner-cancel" onClick={cancelPlacement}>
-            Cancel
-          </button>
-        </div>
-      )}
 
       {/* Popover after a pin is dropped */}
       {draft && (

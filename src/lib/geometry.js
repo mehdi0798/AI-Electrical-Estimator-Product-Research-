@@ -1,25 +1,29 @@
 // Coordinate maths for the drawing. Every x,y the app stores or logs is in
 // ORIGINAL IMAGE PIXELS (naturalWidth/naturalHeight), never screen pixels, at any
 // zoom level or scroll position (Hard rule 7). Plain functions, tested in Node.
+//
+// THE shared conversion (v0.3 step 9). zoom = screen px per image px; the image
+// is drawn at naturalWidth x zoom. "Screen" points are measured from the drawn
+// image's top-left corner. Every other conversion below goes through this pair.
+export function imageToScreen({ x, y, zoom }) {
+  return { left: x * zoom, top: y * zoom }
+}
+export function screenToImage({ left, top, zoom }) {
+  return { x: left / zoom, y: top / zoom }
+}
 
-// A click at (clientX, clientY) on the rendered image -> image pixels.
-// `rect` is the image's getBoundingClientRect(): it already reflects scroll and
-// zoom (rect.width = naturalWidth * zoom), so the ratio converts any zoom.
-export function clientToImage({ clientX, clientY, rect, naturalWidth, naturalHeight }) {
-  const scaleX = naturalWidth / rect.width
-  const scaleY = naturalHeight / rect.height
-  return {
-    x: Math.round((clientX - rect.left) * scaleX),
-    y: Math.round((clientY - rect.top) * scaleY),
-  }
+// A click at (clientX, clientY) -> whole image pixels, as logged.
+// `imageRect` is the drawn <img>'s getBoundingClientRect() (it already reflects
+// scroll position and zoom).
+export function clientToImage({ clientX, clientY, imageRect, zoom }) {
+  const p = screenToImage({ left: clientX - imageRect.left, top: clientY - imageRect.top, zoom })
+  return { x: Math.round(p.x), y: Math.round(p.y) }
 }
 
 // The image point at the centre of the scroll box's visible area.
 export function viewportCenterImage({ scrollLeft, scrollTop, viewWidth, viewHeight, zoom }) {
-  return {
-    x: Math.round((scrollLeft + viewWidth / 2) / zoom),
-    y: Math.round((scrollTop + viewHeight / 2) / zoom),
-  }
+  const p = screenToImage({ left: scrollLeft + viewWidth / 2, top: scrollTop + viewHeight / 2, zoom })
+  return { x: Math.round(p.x), y: Math.round(p.y) }
 }
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
@@ -27,11 +31,11 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 // Scroll offsets that put image point (x, y) in the centre of the view, clamped
 // to what the scroll box can actually reach.
 export function scrollToCenter({ x, y, zoom, naturalWidth, naturalHeight, viewWidth, viewHeight }) {
-  const maxLeft = Math.max(0, naturalWidth * zoom - viewWidth)
-  const maxTop = Math.max(0, naturalHeight * zoom - viewHeight)
+  const p = imageToScreen({ x, y, zoom })
+  const size = imageToScreen({ x: naturalWidth, y: naturalHeight, zoom })
   return {
-    left: Math.round(clamp(x * zoom - viewWidth / 2, 0, maxLeft)),
-    top: Math.round(clamp(y * zoom - viewHeight / 2, 0, maxTop)),
+    left: Math.round(clamp(p.left - viewWidth / 2, 0, Math.max(0, size.left - viewWidth))),
+    top: Math.round(clamp(p.top - viewHeight / 2, 0, Math.max(0, size.top - viewHeight))),
   }
 }
 
@@ -39,23 +43,16 @@ export function isInsideImage(x, y, naturalWidth, naturalHeight) {
   return x >= 0 && y >= 0 && x < naturalWidth && y < naturalHeight
 }
 
-// A square box of `size` image px centred on (x, y), clipped to the image, as
-// CSS percentages of the image box, so it stays on the item at any zoom.
+// The ONE click-to-jump box (Hard rule 3), in screen px inside the drawn image:
+// a square of `size` image px centred on (x, y), so it scales with zoom, but
+// never smaller than `minScreen` px on screen; clipped to the image.
 // Returns null if the point is outside the image (nothing to box).
-export function boxPercent({ x, y, size, naturalWidth, naturalHeight }) {
+export function jumpBoxRect({ x, y, zoom, size, minScreen = 0, naturalWidth, naturalHeight }) {
   if (!isInsideImage(x, y, naturalWidth, naturalHeight)) return null
-  const left = clamp(x - size / 2, 0, naturalWidth)
-  const top = clamp(y - size / 2, 0, naturalHeight)
-  const right = clamp(x + size / 2, 0, naturalWidth)
-  const bottom = clamp(y + size / 2, 0, naturalHeight)
-  // Rounded to 4 decimals: drops float noise, far below a pixel.
-  const pct = (v, total) => `${Math.round((v / total) * 1e6) / 1e4}%`
-  return {
-    left: pct(left, naturalWidth),
-    top: pct(top, naturalHeight),
-    width: pct(right - left, naturalWidth),
-    height: pct(bottom - top, naturalHeight),
-  }
+  const half = Math.max(size, screenToImage({ left: minScreen, top: 0, zoom }).x) / 2 // in image px
+  const tl = imageToScreen({ x: clamp(x - half, 0, naturalWidth), y: clamp(y - half, 0, naturalHeight), zoom })
+  const br = imageToScreen({ x: clamp(x + half, 0, naturalWidth), y: clamp(y + half, 0, naturalHeight), zoom })
+  return { left: tl.left, top: tl.top, width: br.left - tl.left, height: br.top - tl.top }
 }
 
 // True if the scroll position is (within `tol` px) at a target the app scrolled
@@ -91,7 +88,7 @@ export function stepZoom(zoom, direction) {
 // (screen px from the view's top-left). Returns the new scroll offsets; the
 // browser clamps them to what the scroll box can reach.
 export function zoomAroundPoint({ scrollLeft, scrollTop, offsetX, offsetY, zoom, newZoom }) {
-  const imgX = (scrollLeft + offsetX) / zoom
-  const imgY = (scrollTop + offsetY) / zoom
-  return { left: imgX * newZoom - offsetX, top: imgY * newZoom - offsetY }
+  const p = screenToImage({ left: scrollLeft + offsetX, top: scrollTop + offsetY, zoom })
+  const q = imageToScreen({ x: p.x, y: p.y, zoom: newZoom })
+  return { left: q.left - offsetX, top: q.top - offsetY }
 }

@@ -18,8 +18,10 @@ import {
   ZOOM_MIN,
   clampZoom,
   fitWidthZoom,
-  boxPercent,
   clientToImage,
+  imageToScreen,
+  jumpBoxRect,
+  screenToImage,
   isAtScroll,
   scrollToCenter,
   stepZoom,
@@ -154,11 +156,26 @@ console.log('geometry (Hard rule 7, click-to-jump)')
 
 test('clientToImage at native size matches the v0.1 maths', () => {
   // Image 1307x486 at native size, scrolled so its left edge is 200px off-screen.
-  const rect = { left: -200 + 16, top: 70, width: 1307, height: 486 }
-  assert.deepEqual(
-    clientToImage({ clientX: 16 + 30, clientY: 70 + 456, rect, naturalWidth: 1307, naturalHeight: 486 }),
-    { x: 230, y: 456 },
-  )
+  const imageRect = { left: -200 + 16, top: 70 }
+  assert.deepEqual(clientToImage({ clientX: 16 + 30, clientY: 70 + 456, imageRect, zoom: 1 }), { x: 230, y: 456 })
+})
+
+test('the shared conversion: imageToScreen and screenToImage are exact inverses at 25%-400%', () => {
+  for (const zoom of [0.25, 0.4, 0.68, 1, 1.25, 2, 3.1, 4]) {
+    for (const p of [{ x: 0, y: 0 }, { x: 37, y: 512 }, { x: 2018, y: 718 }, { x: 1099.5, y: 3.25 }]) {
+      const sc = imageToScreen({ ...p, zoom })
+      assert.ok(Math.abs(sc.left - p.x * zoom) < 1e-9 && Math.abs(sc.top - p.y * zoom) < 1e-9)
+      const back = screenToImage({ ...sc, zoom })
+      assert.ok(Math.abs(back.x - p.x) < 1e-9 && Math.abs(back.y - p.y) < 1e-9, `zoom ${zoom} ${JSON.stringify(p)}`)
+    }
+  }
+})
+
+test('clientToImage rounds to whole image pixels and ignores pane offset and scroll', () => {
+  // Drawn image at 200%, its top-left 50 px left of / 30 px above the viewport edge.
+  const imageRect = { left: -50, top: -30 }
+  assert.deepEqual(clientToImage({ clientX: -50 + 201, clientY: -30 + 99, imageRect, zoom: 2 }), { x: 101, y: 50 }) // 100.5 -> 101, 49.5 -> 50
+  assert.deepEqual(clientToImage({ clientX: -50 + 200.9, clientY: -30 + 98.9, imageRect, zoom: 2 }), { x: 100, y: 49 })
 })
 
 test('scrollToCenter centres a point, and clamps at the image edges', () => {
@@ -170,16 +187,26 @@ test('scrollToCenter centres a point, and clamps at the image edges', () => {
   assert.deepEqual(scrollToCenter({ ...base, viewWidth: 2000, viewHeight: 900, x: 650, y: 243 }), { left: 0, top: 0 })
 })
 
-test('boxPercent: one square box centred on the item, clipped to the image', () => {
-  const b = boxPercent({ x: 500, y: 250, size: 50, naturalWidth: 1000, naturalHeight: 500 })
-  assert.deepEqual(b, { left: '47.5%', top: '45%', width: '5%', height: '10%' })
-  const corner = boxPercent({ x: 10, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 })
-  assert.deepEqual(corner, { left: '0%', top: '0%', width: '3.5%', height: '7%' })
+test('jumpBoxRect: one square box centred on the item, clipped to the image', () => {
+  const nat = { naturalWidth: 1000, naturalHeight: 500 }
+  assert.deepEqual(jumpBoxRect({ x: 500, y: 250, size: 50, zoom: 1, ...nat }), { left: 475, top: 225, width: 50, height: 50 })
+  assert.deepEqual(jumpBoxRect({ x: 10, y: 10, size: 50, zoom: 1, ...nat }), { left: 0, top: 0, width: 35, height: 35 })
 })
 
-test('boxPercent: no box for a point outside the image', () => {
-  assert.equal(boxPercent({ x: 1000, y: 10, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
-  assert.equal(boxPercent({ x: 10, y: -1, size: 50, naturalWidth: 1000, naturalHeight: 500 }), null)
+test('jumpBoxRect: scales with zoom (size x zoom), never under minScreen px on screen', () => {
+  const nat = { naturalWidth: 2019, naturalHeight: 719 }
+  assert.deepEqual(jumpBoxRect({ x: 500, y: 300, size: 32, zoom: 2, minScreen: 24, ...nat }), { left: 968, top: 568, width: 64, height: 64 })
+  assert.deepEqual(jumpBoxRect({ x: 500, y: 300, size: 32, zoom: 1, minScreen: 24, ...nat }), { left: 484, top: 284, width: 32, height: 32 })
+  // At 40% the box would be 12.8 px; it is held at 24 px, still centred on the item.
+  const low = jumpBoxRect({ x: 500, y: 300, size: 32, zoom: 0.4, minScreen: 24, ...nat })
+  assert.ok(Math.abs(low.width - 24) < 1e-9 && Math.abs(low.height - 24) < 1e-9)
+  assert.ok(Math.abs(low.left + 12 - 200) < 1e-9 && Math.abs(low.top + 12 - 120) < 1e-9)
+})
+
+test('jumpBoxRect: no box for a point outside the image', () => {
+  const nat = { naturalWidth: 1000, naturalHeight: 500 }
+  assert.equal(jumpBoxRect({ x: 1000, y: 10, size: 50, zoom: 1, ...nat }), null)
+  assert.equal(jumpBoxRect({ x: 10, y: -1, size: 50, zoom: 1, ...nat }), null)
 })
 
 console.log('click-to-jump on the six real sheets (v0.2 step 5)')
@@ -194,9 +221,9 @@ const REAL = [1, 2, 3, 4, 5, 6].map((n) => {
   return { ...sheet, naturalWidth: png.readUInt32BE(16), naturalHeight: png.readUInt32BE(20) }
 })
 const BOX = FEATURES.jumpBoxPx
-const pct = (s) => Number(s.replace('%', '')) / 100
-// boxPercent rounds to 4 decimals of a percent: at most ~0.001 image px.
-const EPS = 0.01
+// The box at zoom 1 (screen px = image px), as in step 5.
+const boxAt = (s, it) => jumpBoxRect({ x: it.x, y: it.y, size: BOX, zoom: 1, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight })
+const EPS = 1e-9
 
 test('jumpBoxPx is 32', () => assert.equal(BOX, 32))
 
@@ -206,13 +233,13 @@ test('all 312 items: after the jump the item and its whole box are inside the vi
     for (const [screen, pane] of Object.entries(PANES)) {
       for (const it of s.items) {
         const { left, top } = scrollToCenter({ x: it.x, y: it.y, zoom: 1, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight, ...pane })
-        const b = boxPercent({ x: it.x, y: it.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight })
+        const b = boxAt(s, it)
         const at = `${screen} ${s.id} ${it.id}`
         assert.ok(b, at)
-        const bl = pct(b.left) * s.naturalWidth
-        const bt = pct(b.top) * s.naturalHeight
-        const br = bl + pct(b.width) * s.naturalWidth
-        const bb = bt + pct(b.height) * s.naturalHeight
+        const bl = b.left
+        const bt = b.top
+        const br = bl + b.width
+        const bb = bt + b.height
         // The box contains the item and stays on the image.
         assert.ok(bl <= it.x + EPS && it.x <= br + EPS && bt <= it.y + EPS && it.y <= bb + EPS, at)
         assert.ok(bl >= -EPS && bt >= -EPS && br <= s.naturalWidth + EPS && bb <= s.naturalHeight + EPS, at)
@@ -229,9 +256,9 @@ test('all 312 items: after the jump the item and its whole box are inside the vi
 test('all 312 items: an unclipped box is centred on the item to within 1 image pixel', () => {
   for (const s of REAL) {
     for (const it of s.items) {
-      const b = boxPercent({ x: it.x, y: it.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight })
-      const cx = (pct(b.left) + pct(b.width) / 2) * s.naturalWidth
-      const cy = (pct(b.top) + pct(b.height) / 2) * s.naturalHeight
+      const b = boxAt(s, it)
+      const cx = b.left + b.width / 2
+      const cy = b.top + b.height / 2
       const clipped = it.x < BOX / 2 || it.y < BOX / 2 || it.x > s.naturalWidth - BOX / 2 || it.y > s.naturalHeight - BOX / 2
       if (!clipped) assert.ok(Math.abs(cx - it.x) <= 1 && Math.abs(cy - it.y) <= 1, `${s.id} ${it.id}: centre ${cx},${cy}`)
     }
@@ -353,8 +380,7 @@ test('all 312 real items: editing every row keeps id, x, y, confidence, order an
       assert.equal(row.type, e.type)
       assert.equal(row.unit_price, e.unit_price)
       // The jump target is the row's x,y: same box as before the edit.
-      const pos = { x: row.x, y: row.y, size: BOX, naturalWidth: s.naturalWidth, naturalHeight: s.naturalHeight }
-      assert.deepEqual(boxPercent(pos), boxPercent({ ...pos, x: before[i].x, y: before[i].y }))
+      assert.deepEqual(boxAt(s, row), boxAt(s, before[i]))
       n++
     })
     // The sheet file's items are untouched.
@@ -374,12 +400,12 @@ test('the same image point gives the same x,y at every zoom and scroll', () => {
   for (const zoom of [...ZOOMS, 0.317]) {
     for (const [scrollLeft, scrollTop] of [[0, 0], [123, 45], [900, 300]]) {
       // The image box on screen: scrolled, scaled by zoom, offset by the pane.
-      const rect = { left: 16 - scrollLeft, top: 70 - scrollTop, width: nw * zoom, height: nh * zoom }
+      const imageRect = { left: 16 - scrollLeft, top: 70 - scrollTop, width: nw * zoom, height: nh * zoom }
       // Where that image point is on screen.
-      const clientX = rect.left + point.x * zoom
-      const clientY = rect.top + point.y * zoom
+      const clientX = imageRect.left + point.x * zoom
+      const clientY = imageRect.top + point.y * zoom
       assert.deepEqual(
-        clientToImage({ clientX, clientY, rect, naturalWidth: nw, naturalHeight: nh }),
+        clientToImage({ clientX, clientY, imageRect, zoom }),
         point,
         `zoom ${zoom}, scroll ${scrollLeft},${scrollTop}`,
       )
