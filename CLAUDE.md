@@ -50,7 +50,7 @@ These protect the experiment. Breaking one invalidates the results.
 - Row Level Security: the anon key may INSERT into `event_log` only
   (no SELECT, UPDATE or DELETE).
 - `main` is the live site: every push to main redeploys production.
-  Work on `v0.2` only. Never push `main`.
+  Work on `v0.3` only (steps 8–14). Never commit to `v0.2`. Never push `main`.
 
 ---
 
@@ -265,7 +265,7 @@ and `new_value`. All x,y in image pixels.
 ## How to work with me
 - Build ONE step at a time. Do only the step I ask for.
 - Before writing code for a step, propose a short plan and wait for approval.
-- After a step works and I confirm, commit on `v0.2` with a clear message.
+- After a step works and I confirm, commit on `v0.3` with a clear message.
 - Show me any change to this file before making it.
 - Keep it simple. This is a study instrument, not a commercial product.
 - If something conflicts with a Hard rule, stop and tell me.

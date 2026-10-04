@@ -151,27 +151,92 @@
   padding: var(--s4);
   background: var(--bg-sunken);
 }
-.drawing-scroll {
+/* --- Zoomable viewer (ZoomableImage, v0.3 step 8) --- */
+.zi {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  overflow: auto; /* scrolling = panning */
-  background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  background: var(--surface);
 }
-/* Positioning context so added-item dots sit on the image in image-space. */
-.drawing-canvas {
+.zi-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto; /* scrollbars pan */
+  /* Reserve the scrollbar's space so fit width never adds a sideways scrollbar
+     when a tall sheet gets a vertical one. */
+  scrollbar-gutter: stable;
+  /* Same light grey as the margins in the sheet images (#EEEEEE). */
+  background: #eeeeee;
+  cursor: grab;
+  touch-action: none;
+}
+.zi-scroll.dragging,
+.zi-scroll.dragging .zi-img {
+  cursor: grabbing;
+  user-select: none;
+}
+/* Positioning context for overlays (box, dots) in % of the image box. */
+.zi-canvas {
   position: relative;
-  display: inline-block;
+  width: fit-content;
+  margin: 0 auto; /* centred when zoomed out below the pane width */
 }
-.drawing-img {
+.zi-img {
   display: block;
-  /* native size unless features.zoom sizes it */
+  max-width: none;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
 }
-.drawing-scroll.placing,
-.drawing-scroll.placing .drawing-img {
+.drawing-viewer.placing .zi-scroll,
+.drawing-viewer.placing .zi-img {
   cursor: crosshair;
+}
+.zi-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  padding: var(--s1) var(--s2);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.zi-btn {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.zi-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.zi-btn:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+.zi-level {
+  min-width: 52px;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.zi-fit {
+  margin-left: var(--s2);
 }
 
 /* Dots — ONLY for participant-added items (Hard rule 3). */
@@ -189,45 +254,6 @@
 .map-dot.draft {
   background: #f79009;
   box-shadow: 0 0 0 1px rgba(247, 144, 9, 0.6), var(--shadow-sm);
-}
-
-/* Zoom toolbar (features.zoom), floating over the drawing's top-right corner */
-.zoom-bar {
-  position: absolute;
-  top: calc(var(--s4) + var(--s3));
-  right: calc(var(--s4) + var(--s3));
-  z-index: 5;
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-md);
-}
-.zoom-btn {
-  min-width: 30px;
-  height: 28px;
-  padding: 0 var(--s2);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--text-2);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-.zoom-btn:hover:not(:disabled) {
-  background: var(--surface-2);
-  color: var(--text);
-}
-.zoom-btn:disabled {
-  color: var(--text-3);
-  cursor: not-allowed;
-}
-.zoom-level {
-  min-width: 52px;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */

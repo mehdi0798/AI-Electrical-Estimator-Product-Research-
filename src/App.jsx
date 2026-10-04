@@ -1,18 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import CATALOG from './config/catalog.json'
 import FEATURES from './config/features.json'
 import { getLogContext, logEvent, setLogContext } from './lib/logger'
 import { nextAddId } from './lib/addIds'
 import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './lib/edits'
-import {
-  boxPercent,
-  clientToImage,
-  isAtScroll,
-  nextZoom,
-  scrollToCenter,
-  viewportCenterImage,
-} from './lib/geometry'
+import { boxPercent, clientToImage } from './lib/geometry'
+import ZoomableImage from './ZoomableImage'
 import {
   clearSession,
   loadSession,
@@ -366,39 +360,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     setEditing(null)
     setEditName(null)
   }
-  const imgRef = useRef(null)
-  const scrollRef = useRef(null) // the drawing's scroll box (scroll = pan)
+  const imgRef = useRef(null) // the drawing <img> (inside ZoomableImage)
+  const viewerRef = useRef(null) // ZoomableImage: zoom, fit, centring (step 8)
 
-  // --- features.zoom: zoom buttons, zoom + pan logging -------------------------
-  // zoom 1 = native size (v0.1). Every logged x,y stays in image pixels.
-  const [zoom, setZoom] = useState(1)
-  // Image point to re-centre on after a zoom change (applied after render).
-  const pendingCenter = useRef(null)
-  // Scroll position the app moved to itself; a scroll that settles there is not a pan.
-  const programmaticScroll = useRef(null)
-  const lastPan = useRef(null)
-  const panTimer = useRef(null)
-  useEffect(() => () => clearTimeout(panTimer.current), [])
-
-  useLayoutEffect(() => {
-    const box = scrollRef.current
-    const img = imgRef.current
-    const c = pendingCenter.current
-    if (!c || !box || !img?.naturalWidth) return
-    pendingCenter.current = null
-    const target = scrollToCenter({
-      x: c.x,
-      y: c.y,
-      zoom,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
-      viewWidth: box.clientWidth,
-      viewHeight: box.clientHeight,
-    })
-    programmaticScroll.current = target
-    box.scrollLeft = target.left
-    box.scrollTop = target.top
-  }, [zoom])
   // Re-render once the drawing has loaded so dots can be placed (restored
   // additions exist before the image does).
   const [, setImgLoaded] = useState(false)
@@ -618,74 +582,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     }, ms)
   }
 
-  // The image point currently at the centre of the drawing view.
-  const viewCenter = () => {
-    const box = scrollRef.current
-    return viewportCenterImage({
-      scrollLeft: box.scrollLeft,
-      scrollTop: box.scrollTop,
-      viewWidth: box.clientWidth,
-      viewHeight: box.clientHeight,
-      zoom,
-    })
-  }
-
-  // features.zoom: change zoom, keep the same image point in the centre, log it.
-  const changeZoom = (target) => {
-    const box = scrollRef.current
-    const img = imgRef.current
-    if (!box || !img?.naturalWidth || target === zoom) return
-    const center = viewCenter()
-    logEvent({ action: 'zoom_changed', x: center.x, y: center.y, old_value: zoom, new_value: target })
-    pendingCenter.current = center
-    setZoom(target)
-  }
-  const fitZoom = () => {
-    const box = scrollRef.current
-    const img = imgRef.current
-    if (!box || !img?.naturalWidth) return
-    const fit = Math.min(box.clientWidth / img.naturalWidth, box.clientHeight / img.naturalHeight)
-    changeZoom(Math.round(Math.min(3, Math.max(0.1, fit)) * 1000) / 1000)
-  }
-
-  // features.zoom: log a pan once scrolling settles (500 ms), as the image point
-  // at the view centre. Settling where the app itself scrolled is not a pan.
-  const onDrawingScroll = () => {
-    if (!FEATURES.zoom) return
-    clearTimeout(panTimer.current)
-    panTimer.current = setTimeout(() => {
-      const box = scrollRef.current
-      if (!box) return
-      const pos = { left: box.scrollLeft, top: box.scrollTop }
-      if (isAtScroll(pos, programmaticScroll.current)) {
-        programmaticScroll.current = null
-        return
-      }
-      programmaticScroll.current = null
-      const c = viewCenter()
-      if (lastPan.current && lastPan.current.x === c.x && lastPan.current.y === c.y) return
-      lastPan.current = c
-      logEvent({ action: 'panned', x: c.x, y: c.y, new_value: zoom })
-    }, 500)
-  }
-
-  // features.clickToJump: scroll the drawing so the clicked row's item is centred.
-  const jumpTo = (item) => {
-    const box = scrollRef.current
-    const img = imgRef.current
-    if (!box || !img || !img.naturalWidth) return
-    const { left, top } = scrollToCenter({
-      x: item.x,
-      y: item.y,
-      zoom,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
-      viewWidth: box.clientWidth,
-      viewHeight: box.clientHeight,
-    })
-    programmaticScroll.current = { left, top } // a jump is not a participant pan
-    box.scrollTo({ left, top, behavior: 'smooth' })
-  }
+  // features.clickToJump: centre the clicked row's item in the drawing view, at
+  // the current zoom (the viewer keeps whatever zoom the participant chose).
+  const jumpTo = (item) => viewerRef.current?.centerOn(item.x, item.y)
 
   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
   // with features.clickToJump. Derived from selectedId, so there can never be two.
@@ -736,71 +635,26 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       </header>
 
       <main className="layout">
-        {/* Left: drawing at native size inside a scrollable box (scroll = pan) */}
+        {/* Left: drawing, opened at fit width; zoom, pan (ZoomableImage, step 8) */}
         <section className="drawing-pane">
-          {FEATURES.zoom && (
-            <div className="zoom-bar" role="toolbar" aria-label="Zoom">
-              <button
-                type="button"
-                className="zoom-btn"
-                title="Zoom out"
-                aria-label="Zoom out"
-                onClick={() => changeZoom(nextZoom(zoom, -1))}
-                disabled={zoom <= 0.5}
-              >
-                −
-              </button>
-              <button
-                type="button"
-                className="zoom-btn zoom-level"
-                title="Reset to 100%"
-                onClick={() => changeZoom(1)}
-              >
-                {Math.round(zoom * 100)}%
-              </button>
-              <button
-                type="button"
-                className="zoom-btn"
-                title="Zoom in"
-                aria-label="Zoom in"
-                onClick={() => changeZoom(nextZoom(zoom, 1))}
-                disabled={zoom >= 3}
-              >
-                +
-              </button>
-              <button type="button" className="zoom-btn" title="Fit drawing" onClick={fitZoom}>
-                Fit
-              </button>
-            </div>
-          )}
-          <div
-            ref={scrollRef}
-            className={'drawing-scroll' + (placing ? ' placing' : '')}
-            onScroll={FEATURES.zoom ? onDrawingScroll : undefined}
+          <ZoomableImage
+            ref={viewerRef}
+            imgRef={imgRef}
+            src={sheet.image}
+            alt={sheet.name}
+            className={'drawing-viewer' + (placing ? ' placing' : '')}
+            panDisabled={placing}
+            onImageClick={handleDrawingClick}
+            onLoad={() => setImgLoaded(true)}
           >
-            <div className="drawing-canvas">
-              <img
-                ref={imgRef}
-                className="drawing-img"
-                src={sheet.image}
-                alt={sheet.name}
-                onClick={handleDrawingClick}
-                onLoad={() => setImgLoaded(true)}
-                style={
-                  FEATURES.zoom && imgRef.current?.naturalWidth
-                    ? { width: `${imgRef.current.naturalWidth * zoom}px`, maxWidth: 'none' }
-                    : undefined
-                }
-              />
-              {/* Dots ONLY for participant-added items (Hard rule 3). */}
-              {additions.map((a) => (
-                <span key={a.id} className="map-dot" style={dotStyle(a)} />
-              ))}
-              {draft && <span className="map-dot draft" style={dotStyle(draft)} />}
-              {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
-              {jumpBox && <span className="jump-box" style={jumpBox} aria-hidden="true" />}
-            </div>
-          </div>
+            {/* Dots ONLY for participant-added items (Hard rule 3). */}
+            {additions.map((a) => (
+              <span key={a.id} className="map-dot" style={dotStyle(a)} />
+            ))}
+            {draft && <span className="map-dot draft" style={dotStyle(draft)} />}
+            {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
+            {jumpBox && <span className="jump-box" style={jumpBox} aria-hidden="true" />}
+          </ZoomableImage>
         </section>
 
         {/* Right: full list, sorted by confidence */}

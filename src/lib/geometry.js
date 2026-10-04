@@ -67,10 +67,31 @@ export function isAtScroll(pos, target, tol = 2) {
   )
 }
 
-// Zoom steps for the zoom buttons (features.zoom). 1 = native size, as in v0.1.
-export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3]
+// --- Zoom (v0.3 step 8) -----------------------------------------------------------
+// zoom = screen pixels per image pixel: 1 = 100% = native size. The <img> is drawn
+// at naturalWidth x zoom, so image pixels never change (Hard rule 7).
+export const ZOOM_MIN = 0.25
+export const ZOOM_MAX = 4
+export const ZOOM_STEP = 1.25
 
-export function nextZoom(current, direction) {
-  if (direction > 0) return ZOOM_LEVELS.find((z) => z > current + 1e-9) ?? current
-  return [...ZOOM_LEVELS].reverse().find((z) => z < current - 1e-9) ?? current
+export const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z))
+
+// Fit width: the image exactly fills the pane's inner width (no cap at 100%).
+export function fitWidthZoom({ viewWidth, naturalWidth }) {
+  return clampZoom(viewWidth / naturalWidth)
+}
+
+// The +/- buttons: one step of x1.25, clamped to 25%-400%.
+export function stepZoom(zoom, direction) {
+  return clampZoom(direction > 0 ? zoom * ZOOM_STEP : zoom / ZOOM_STEP)
+}
+
+// Zoom around an anchor (the pointer, or the view centre): the image point under
+// the anchor stays under it. offsetX/offsetY = anchor position inside the view
+// (screen px from the view's top-left). Returns the new scroll offsets; the
+// browser clamps them to what the scroll box can reach.
+export function zoomAroundPoint({ scrollLeft, scrollTop, offsetX, offsetY, zoom, newZoom }) {
+  const imgX = (scrollLeft + offsetX) / zoom
+  const imgY = (scrollTop + offsetY) / zoom
+  return { left: imgX * newZoom - offsetX, top: imgY * newZoom - offsetY }
 }

@@ -14,13 +14,17 @@ import {
   startSavedSession,
 } from '../src/lib/sessionStore.js'
 import {
-  ZOOM_LEVELS,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  clampZoom,
+  fitWidthZoom,
   boxPercent,
   clientToImage,
   isAtScroll,
-  nextZoom,
   scrollToCenter,
+  stepZoom,
   viewportCenterImage,
+  zoomAroundPoint,
 } from '../src/lib/geometry.js'
 import { applyEdit, bidTotal, catalogIndex, displayItem } from '../src/lib/edits.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
@@ -361,11 +365,13 @@ test('all 312 real items: editing every row keeps id, x, y, confidence, order an
 
 console.log('zoom (features.zoom, Hard rule 7)')
 
+const ZOOMS = [0.25, 0.32, 0.5, 0.68, 1, 1.25, 1.5625, 2, 4]
+
 test('the same image point gives the same x,y at every zoom and scroll', () => {
   const nw = 1307
   const nh = 486
   const point = { x: 30, y: 456 } // D2 in the self-test key
-  for (const zoom of [...ZOOM_LEVELS, 0.317]) {
+  for (const zoom of [...ZOOMS, 0.317]) {
     for (const [scrollLeft, scrollTop] of [[0, 0], [123, 45], [900, 300]]) {
       // The image box on screen: scrolled, scaled by zoom, offset by the pane.
       const rect = { left: 16 - scrollLeft, top: 70 - scrollTop, width: nw * zoom, height: nh * zoom }
@@ -386,7 +392,7 @@ test('view centre in image px is independent of zoom (centre, then read back)', 
   const nh = 3000
   const view = { viewWidth: 600, viewHeight: 400 }
   const p = { x: 1800, y: 1200 }
-  for (const zoom of ZOOM_LEVELS) {
+  for (const zoom of ZOOMS) {
     const { left, top } = scrollToCenter({ ...p, zoom, naturalWidth: nw, naturalHeight: nh, ...view })
     const c = viewportCenterImage({ scrollLeft: left, scrollTop: top, ...view, zoom })
     assert.ok(Math.abs(c.x - p.x) <= 1 && Math.abs(c.y - p.y) <= 1, `zoom ${zoom}: ${JSON.stringify(c)}`)
@@ -400,13 +406,39 @@ test('viewportCenterImage converts screen scroll to image px', () => {
   )
 })
 
-test('nextZoom steps through the levels and stops at the ends', () => {
-  assert.equal(nextZoom(1, 1), 1.25)
-  assert.equal(nextZoom(1, -1), 0.75)
-  assert.equal(nextZoom(3, 1), 3)
-  assert.equal(nextZoom(0.5, -1), 0.5)
-  assert.equal(nextZoom(0.6, 1), 0.75) // from a "Fit" value, to the next step
-  assert.equal(nextZoom(0.6, -1), 0.5)
+test('zoom range 25%-400%; +/- step x1.25 and stop at the ends', () => {
+  assert.equal(ZOOM_MIN, 0.25)
+  assert.equal(ZOOM_MAX, 4)
+  assert.equal(stepZoom(1, 1), 1.25)
+  assert.equal(stepZoom(1, -1), 0.8)
+  assert.equal(stepZoom(3.5, 1), 4)
+  assert.equal(stepZoom(0.3, -1), 0.25)
+  assert.equal(stepZoom(4, 1), 4)
+  assert.equal(stepZoom(0.25, -1), 0.25)
+  assert.equal(clampZoom(10), 4)
+  assert.equal(clampZoom(0.01), 0.25)
+})
+
+test('fit width fills the pane width exactly, above 100% too (no cap)', () => {
+  for (const [vw, nw] of [[1371, 1100], [817, 2019], [817, 1100], [1371, 2019], [1371, 1302]]) {
+    const z = fitWidthZoom({ viewWidth: vw, naturalWidth: nw })
+    assert.ok(Math.abs(nw * z - vw) < 1e-9, `${vw}/${nw}`)
+  }
+  assert.ok(fitWidthZoom({ viewWidth: 1371, naturalWidth: 1100 }) > 1)
+})
+
+test('zoomAroundPoint keeps the image point under the anchor fixed', () => {
+  const cases = [
+    { scrollLeft: 0, scrollTop: 0, offsetX: 200, offsetY: 150, zoom: 0.68, newZoom: 0.85 },
+    { scrollLeft: 340, scrollTop: 90, offsetX: 10, offsetY: 400, zoom: 1.25, newZoom: 4 },
+    { scrollLeft: 1200, scrollTop: 700, offsetX: 600, offsetY: 300, zoom: 2, newZoom: 0.25 },
+  ]
+  for (const c of cases) {
+    const before = { x: (c.scrollLeft + c.offsetX) / c.zoom, y: (c.scrollTop + c.offsetY) / c.zoom }
+    const { left, top } = zoomAroundPoint(c)
+    const after = { x: (left + c.offsetX) / c.newZoom, y: (top + c.offsetY) / c.newZoom }
+    assert.ok(Math.abs(after.x - before.x) < 1e-9 && Math.abs(after.y - before.y) < 1e-9, JSON.stringify(c))
+  }
 })
 
 test('isAtScroll tells a settled programmatic scroll from a participant pan', () => {

@@ -5,5 +5,5 @@
   "analyseDurationMs": 4000,
   "clickToJump": true,
   "jumpBoxPx": 32,
-  "zoom": false
+  "zoom": true
 }
