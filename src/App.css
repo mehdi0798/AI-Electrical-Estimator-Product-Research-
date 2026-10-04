@@ -242,18 +242,19 @@
 /* Dots — ONLY for participant-added items (Hard rule 3). */
 .map-dot {
   position: absolute;
+  box-sizing: border-box;
   width: 12px;
   height: 12px;
   margin: -6px 0 0 -6px; /* centre on the point */
   border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.55), var(--shadow-sm);
+  /* Hollow ring: the symbol underneath stays visible. */
+  background: transparent;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9); /* thin white halo for contrast */
   pointer-events: none;
 }
 .map-dot.draft {
-  background: #f79009;
-  box-shadow: 0 0 0 1px rgba(247, 144, 9, 0.6), var(--shadow-sm);
+  border-color: #f79009; /* the pin while the Add dialog is open */
 }
 
 /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
