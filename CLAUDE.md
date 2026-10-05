@@ -1,14 +1,9 @@
 # Project brief for Claude Code
 
-## Current status (4 Oct 2026)
-- Branch `v0.2`. Steps 1–7 DONE and committed: real sheets in, name + type,
-  catalog and prices, click-to-jump, edit, errors planted, answer keys
-  written, scoring RADIUS locked at 30.
-- End-to-end test on sheet 1 PASSED: app logged to Supabase, CSV exported,
-  `score.js` scored it correctly.
-- NOW: v0.3, the drawing viewer and the legend. Next: step 8 below.
-- The practice sheet (old step 8) is now step 14. It comes last so the
-  participant practises on the final interface.
+## Current status (6 Oct 2026)
+- `main` is the FROZEN STUDY VERSION: commit `694825f` (tag `study-v1`),
+  v0.3 complete (steps 8–14). No more pushes to `main` without my explicit OK.
+- `v0.2` and `v0.3` are kept as backup branches.
 
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
