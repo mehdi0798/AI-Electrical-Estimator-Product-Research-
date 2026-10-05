@@ -19,6 +19,10 @@ export const EXPECTED = {
   sheet6: { items: 47, width: 1100, height: 1148 },
 }
 
+// The practice sheet (v0.3 step 14): supplied by the researcher with 29 items on
+// an 892 x 645 drawing. Not in sheets_summary.csv; ids P001...; never scored.
+export const PRACTICE = { items: 29, width: 892, height: 645 }
+
 export const ITEM_COLUMNS = ['id', 'name', 'type', 'description', 'label', 'where', 'x', 'y', 'status']
 
 // CSV text -> array of objects keyed by the (trimmed) header.
@@ -102,10 +106,14 @@ export function formatCatalog(catalog) {
 //   summary:    the sheets_summary.csv row { items, image_width, image_height, image_sha256 }
 //   png:        Buffer of the PNG in public/sheets/ (already copied)
 //   catalog:    Map(name -> type) from readCatalog
-export function buildBaseline({ sheet, itemsText, summary, png, catalog }) {
+// Practice (step 14) passes expected = PRACTICE, idPattern = /^P\d+$/,
+// idExample = 'P001' and requireSummary = false; every other check is the same.
+export function buildBaseline({
+  sheet, itemsText, summary, png, catalog,
+  expected = EXPECTED[sheet], idPattern = /^B\d+$/, idExample = 'B001', requireSummary = true,
+}) {
   const errors = []
   const where = (msg) => errors.push(`${sheet}: ${msg}`)
-  const expected = EXPECTED[sheet]
   if (!expected) where('not one of sheet1..sheet6')
 
   // Image: size and fingerprint must match the summary (and the CLAUDE.md table).
@@ -126,7 +134,7 @@ export function buildBaseline({ sheet, itemsText, summary, png, catalog }) {
   if (size && expected && (size.width !== expected.width || size.height !== expected.height)) {
     where(`image is ${size.width}x${size.height}, CLAUDE.md table says ${expected.width}x${expected.height}`)
   }
-  if (!summary) where('no row in sheets_summary.csv')
+  if (!summary && requireSummary) where('no row in sheets_summary.csv')
 
   // Items
   const { header, records } = csvObjects(itemsText)
@@ -145,7 +153,7 @@ export function buildBaseline({ sheet, itemsText, summary, png, catalog }) {
   const seen = new Set()
   const items = records.map((r, i) => {
     const at = `row ${i + 2} (${r.id || 'no id'})`
-    if (!/^B\d+$/.test(r.id)) where(`${at}: id must look like B001`)
+    if (!idPattern.test(r.id)) where(`${at}: id must look like ${idExample}`)
     else if (seen.has(r.id)) where(`${at}: duplicate id`)
     seen.add(r.id)
     if (!r.name) where(`${at}: no name`)

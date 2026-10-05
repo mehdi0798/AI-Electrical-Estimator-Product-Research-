@@ -7,13 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/score.test.js && node scripts/validate-sheets.test.js && node scripts/app-lib.test.js && node scripts/import-baselines.test.js && node scripts/import-catalog.test.js && node scripts/build-sheets.test.js && node scripts/plant.test.js && node scripts/build-legend.test.js",
+    "test": "node scripts/score.test.js && node scripts/validate-sheets.test.js && node scripts/app-lib.test.js && node scripts/import-baselines.test.js && node scripts/import-catalog.test.js && node scripts/build-sheets.test.js && node scripts/plant.test.js && node scripts/build-legend.test.js && node scripts/import-practice.test.js",
     "validate": "node scripts/validate-sheets.js",
     "import-baselines": "node scripts/import-baselines.js",
     "import-catalog": "node scripts/import-catalog.js",
     "build-sheets": "node scripts/build-sheets.js",
     "plant": "node scripts/plant.js",
-    "build-legend": "node scripts/build-legend.js"
+    "build-legend": "node scripts/build-legend.js",
+    "import-practice": "node scripts/import-practice.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

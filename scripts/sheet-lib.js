@@ -44,11 +44,15 @@ export const idPrefix = (sheet) => `S${sheet.replace(/^sheet/, '')}-`
 //   baseline: parsed baseline/<sheet>.baseline.json
 //   catalog:  parsed src/config/catalog.json
 //   pngSha:   sha256 (hex) of public/sheets/<sheet>.png as it is now
+// Practice (step 14) passes expected = PRACTICE, prefix = 'P-' and its own name;
+// the checks, confidence rule, order and row format are the same.
 // Returns { sheet, errors }; sheet is null on any error.
-export function buildSheet({ sheet, baseline, catalog, pngSha }) {
+export function buildSheet({
+  sheet, baseline, catalog, pngSha,
+  expected = EXPECTED[sheet], prefix = idPrefix(sheet), name = `Sheet ${sheet.replace(/^sheet/, '')}`,
+}) {
   const errors = []
   const err = (msg) => errors.push(`${sheet}: ${msg}`)
-  const expected = EXPECTED[sheet]
   if (!expected) return { sheet: null, errors: [`${sheet}: not one of ${Object.keys(EXPECTED).join(', ')}`] }
 
   if (baseline.sheet !== sheet) err(`baseline says sheet "${baseline.sheet}"`)
@@ -88,10 +92,9 @@ export function buildSheet({ sheet, baseline, catalog, pngSha }) {
   })
   if (errors.length) return { sheet: null, errors }
 
-  const prefix = idPrefix(sheet)
   const ordered = sortForDisplay(built).map((it, i) => ({ id: `${prefix}${i + 1}`, ...it }))
   return {
-    sheet: { id: sheet, name: `Sheet ${sheet.replace(/^sheet/, '')}`, image, items: ordered },
+    sheet: { id: sheet, name, image, items: ordered },
     errors,
   }
 }

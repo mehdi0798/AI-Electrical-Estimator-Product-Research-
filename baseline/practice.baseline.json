@@ -1,0 +1,330 @@
+{
+  "sheet": "practice",
+  "image": "/sheets/practice.png",
+  "image_size": {
+    "width": 892,
+    "height": 645
+  },
+  "image_sha256": "2aa3445cb7658b2f95006a632067d90b3d021e5c2d484a3f401e360a64c57f6f",
+  "items": [
+    {
+      "id": "P001",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 91,
+      "y": 104,
+      "status": "practice"
+    },
+    {
+      "id": "P002",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 310,
+      "y": 104,
+      "status": "practice"
+    },
+    {
+      "id": "P003",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 457,
+      "y": 104,
+      "status": "practice"
+    },
+    {
+      "id": "P004",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 603,
+      "y": 104,
+      "status": "practice"
+    },
+    {
+      "id": "P005",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 822,
+      "y": 104,
+      "status": "practice"
+    },
+    {
+      "id": "P006",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 91,
+      "y": 252,
+      "status": "practice"
+    },
+    {
+      "id": "P007",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 310,
+      "y": 252,
+      "status": "practice"
+    },
+    {
+      "id": "P008",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 457,
+      "y": 252,
+      "status": "practice"
+    },
+    {
+      "id": "P009",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 603,
+      "y": 252,
+      "status": "practice"
+    },
+    {
+      "id": "P010",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 822,
+      "y": 252,
+      "status": "practice"
+    },
+    {
+      "id": "P011",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 105,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P012",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 250,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P013",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 398,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P014",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 543,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P015",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 690,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P016",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 838,
+      "y": 422,
+      "status": "practice"
+    },
+    {
+      "id": "P017",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 521,
+      "y": 548,
+      "status": "practice"
+    },
+    {
+      "id": "P018",
+      "name": "B",
+      "type": "Light fixture",
+      "description": "B",
+      "label": "",
+      "where": "",
+      "x": 667,
+      "y": 548,
+      "status": "practice"
+    },
+    {
+      "id": "P019",
+      "name": "B-NL",
+      "type": "Light fixture",
+      "description": "B-NL",
+      "label": "",
+      "where": "",
+      "x": 813,
+      "y": 548,
+      "status": "practice"
+    },
+    {
+      "id": "P020",
+      "name": "Occupancy sensor",
+      "type": "Sensor",
+      "description": "Occupancy sensor",
+      "label": "",
+      "where": "",
+      "x": 115,
+      "y": 28,
+      "status": "practice"
+    },
+    {
+      "id": "P021",
+      "name": "Occupancy sensor",
+      "type": "Sensor",
+      "description": "Occupancy sensor",
+      "label": "",
+      "where": "",
+      "x": 264,
+      "y": 334,
+      "status": "practice"
+    },
+    {
+      "id": "P022",
+      "name": "Occupancy sensor",
+      "type": "Sensor",
+      "description": "Occupancy sensor",
+      "label": "",
+      "where": "",
+      "x": 75,
+      "y": 545,
+      "status": "practice"
+    },
+    {
+      "id": "P023",
+      "name": "Occupancy sensor",
+      "type": "Sensor",
+      "description": "Occupancy sensor",
+      "label": "",
+      "where": "",
+      "x": 290,
+      "y": 542,
+      "status": "practice"
+    },
+    {
+      "id": "P024",
+      "name": "Occupancy sensor",
+      "type": "Sensor",
+      "description": "Occupancy sensor",
+      "label": "",
+      "where": "",
+      "x": 570,
+      "y": 605,
+      "status": "practice"
+    },
+    {
+      "id": "P025",
+      "name": "E1-NL",
+      "type": "Light fixture",
+      "description": "E1-NL",
+      "label": "",
+      "where": "",
+      "x": 37,
+      "y": 594,
+      "status": "practice"
+    },
+    {
+      "id": "P026",
+      "name": "E1-NL",
+      "type": "Light fixture",
+      "description": "E1-NL",
+      "label": "",
+      "where": "",
+      "x": 131,
+      "y": 594,
+      "status": "practice"
+    },
+    {
+      "id": "P027",
+      "name": "E1-NL",
+      "type": "Light fixture",
+      "description": "E1-NL",
+      "label": "",
+      "where": "",
+      "x": 242,
+      "y": 594,
+      "status": "practice"
+    },
+    {
+      "id": "P028",
+      "name": "E1-NL",
+      "type": "Light fixture",
+      "description": "E1-NL",
+      "label": "",
+      "where": "",
+      "x": 338,
+      "y": 594,
+      "status": "practice"
+    },
+    {
+      "id": "P029",
+      "name": "Single pole wall switch",
+      "type": "Switch",
+      "description": "Single pole wall switch",
+      "label": "",
+      "where": "",
+      "x": 847,
+      "y": 341,
+      "status": "practice"
+    }
+  ]
+}
