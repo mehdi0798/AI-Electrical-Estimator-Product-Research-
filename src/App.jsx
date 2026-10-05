@@ -34,6 +34,12 @@ const euro = (n) =>
 // handoff/catalog.csv). Nothing is hardcoded here.
 const CAT = catalogIndex(CATALOG)
 
+// Start zoom when a sheet opens (same for every participant, Hard rule 8): the
+// drawing at 80%, the legend at 71%, or fit width if that is narrower, so there
+// is never a sideways scrollbar at the start. The Fit width button is unchanged.
+const DRAWING_START_ZOOM = 0.8
+const LEGEND_START_ZOOM = 0.71
+
 // The shared Type -> Name picker. Type only narrows the names; the chosen NAME
 // decides the saved type and price. Changing the type picks that type's first name.
 function TypeNamePicker({ name, onChange }) {
@@ -655,6 +661,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             src={sheet.image}
             alt={sheet.name}
             className={'drawing-viewer' + (placing ? ' placing' : '')}
+            startZoom={DRAWING_START_ZOOM}
             panDisabled={placing}
             onImageClick={handleDrawingClick}
             onLoad={() => setImgLoaded(true)}
@@ -703,7 +710,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             </button>
             {legendOpen && (
               <div id="legend-viewer" className="legend-body">
-                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt="Electrical legend" className="legend-viewer" />
+                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt="Electrical legend" className="legend-viewer" startZoom={LEGEND_START_ZOOM} />
               </div>
             )}
           </div>

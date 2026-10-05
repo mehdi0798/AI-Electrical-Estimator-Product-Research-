@@ -10,7 +10,9 @@ import { createGesture, createScrollFilter, zoomPercent } from './lib/gestures'
 // current zoom that returns the overlays (box, dots), placed at (x*zoom, y*zoom)
 // through the shared conversion in lib/geometry (Hard rule 7).
 //
-//   - opens at FIT WIDTH; refits on resize until the participant zooms
+//   - opens at `startZoom`, or at fit width if that would be wider than the pane
+//     (or if no startZoom is given); same rule on resize until the participant
+//     zooms. After the Fit width button, resize refits to width.
 //   - toolbar: - , % , + , Fit width (x1.25 steps, 25%-400%)
 //   - ctrl + wheel / trackpad pinch zooms around the pointer; plain wheel scrolls
 //   - click-and-drag pans (grab cursor); a move under 4 px is still a click
@@ -31,13 +33,14 @@ const SMOOTH_SCROLL_MS = 1500 // click-to-jump's smooth scroll
 const DRAG_TAIL_MS = 100 // the scroll event of a drag's last move can land after pointerup
 
 const ZoomableImage = forwardRef(function ZoomableImage(
-  { src, alt, imgRef, panDisabled = false, onImageClick, onLoad, onZoomChange, onPan, className = '', children },
+  { src, alt, imgRef, startZoom, panDisabled = false, onImageClick, onLoad, onZoomChange, onPan, className = '', children },
   ref,
 ) {
   const scrollRef = useRef(null)
   const [zoom, setZoom] = useState(null) // null until the image is loaded and fitted
   const zoomRef = useRef(null) // current zoom for event handlers between renders
   const userZoomed = useRef(false) // after the first zoom, resize keeps the zoom
+  const startMode = useRef(true) // until Fit width is pressed, automatic fits use startZoom
   const pendingScroll = useRef(null) // scroll to apply after the new size renders
   const pendingZoomLog = useRef(null) // { how, oldZoom } to report once it renders
   const drag = useRef(null)
@@ -122,15 +125,20 @@ const ZoomableImage = forwardRef(function ZoomableImage(
     setZoom(newZoom)
   }
 
-  // how = 'fit' for the Fit width button (logged); automatic fits pass nothing.
+  // how = 'fit' for the Fit width button (logged, always fit width); automatic
+  // fits (sheet open, resize) pass nothing.
   const fit = (how) => {
     const b = box()
     const i = img()
     if (!b || !i?.naturalWidth) return
     endGestures()
     userZoomed.current = false
+    if (how) startMode.current = false
     const oldZoom = zoomRef.current
-    const newZoom = fitWidthZoom({ viewWidth: b.clientWidth, naturalWidth: i.naturalWidth })
+    const fitZoom = fitWidthZoom({ viewWidth: b.clientWidth, naturalWidth: i.naturalWidth })
+    // Sheet open, and resize before the first zoom: startZoom, but never wider
+    // than the pane (no sideways scrollbar at the start).
+    const newZoom = startMode.current && startZoom ? Math.min(clampZoom(startZoom), fitZoom) : fitZoom
     if (newZoom === oldZoom) {
       appScroll({ left: 0, top: 0 }) // same size: no re-render, scroll directly
       return

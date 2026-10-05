@@ -42,7 +42,7 @@ These protect the experiment. Breaking one invalidates the results.
    never screen pixels, at any window size, scroll or ZOOM level. Every
    conversion goes through one shared function, never ad-hoc math.
 8. Every participant sees the same build: same flags, same sheets, same
-   design. Every sheet opens the same way: fit to width, legend open.
+   design. Every sheet opens the same way: start zoom, legend open.
    Nothing changes between the first and last real session.
 
 ## Tech
@@ -89,9 +89,10 @@ cannot check what a symbol means.
 ### Decisions already made
 - Zoom % means: 100% = one image pixel per screen pixel. The toolbar shows
   the real %, so "fit width" reads e.g. 52% on sheet 3 and 95% on sheet 1.
-- Every sheet opens at FIT WIDTH: zoom = pane inner width / image
-  naturalWidth. No horizontal scrollbar at fit. A tall sheet (6) scrolls
-  vertically at fit. That is normal.
+- Every sheet opens at the START ZOOM: drawing 80%, legend 71%, or FIT
+  WIDTH (zoom = pane inner width / image naturalWidth) if that is
+  narrower. No horizontal scrollbar at the start. A tall sheet (6) scrolls
+  vertically. That is normal. The Fit width button always fits to width.
 - Zoom range 25% to 400%. Buttons step by ×1.25. Ctrl + wheel (and trackpad
   pinch) zooms around the mouse pointer. Plain wheel scrolls.
 - Pan: scrollbars, plus click-and-drag on the drawing (grab cursor). In
@@ -99,9 +100,10 @@ cannot check what a symbol means.
 - Rendering: the <img> gets width = naturalWidth × zoom. Do NOT use a CSS
   transform on the scroll container (it breaks scroll sizes and click math).
   Boxes and dots are placed at (x × zoom, y × zoom) and resize with zoom.
-- Window resize: if the participant has not zoomed yet, refit to width;
-  once they have zoomed, keep their zoom.
-- Opening a new sheet always resets to fit width (Hard rule 8).
+- Window resize: if the participant has not zoomed yet, re-apply the start
+  zoom rule (after Fit width: refit to width); once they have zoomed, keep
+  their zoom.
+- Opening a new sheet always resets to the start zoom (Hard rule 8).
 - Click-to-jump keeps the current zoom and centres the symbol in the pane.
 - One reusable component (`ZoomableImage`) is used for BOTH the drawing and
   the legend. Same toolbar, same behaviour. Only the drawing allows
