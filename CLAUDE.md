@@ -1,6 +1,6 @@
 # Project brief for Claude Code
 
-## Current status (6 Oct 2026)
+## Current status (5 Oct 2026)
 - `main` is the FROZEN STUDY VERSION: commit `694825f` (tag `study-v1`),
   v0.3 complete (steps 8–14). No more pushes to `main` without my explicit OK.
 - `v0.2` and `v0.3` are kept as backup branches.
