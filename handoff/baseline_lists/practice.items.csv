@@ -1,0 +1,30 @@
+id,name,type,description,label,where,x,y,status
+P001,B-NL,Light fixture,B-NL,,,91,104,practice
+P002,B-NL,Light fixture,B-NL,,,310,104,practice
+P003,B,Light fixture,B,,,457,104,practice
+P004,B,Light fixture,B,,,603,104,practice
+P005,B,Light fixture,B,,,822,104,practice
+P006,B,Light fixture,B,,,91,252,practice
+P007,B,Light fixture,B,,,310,252,practice
+P008,B,Light fixture,B,,,457,252,practice
+P009,B-NL,Light fixture,B-NL,,,603,252,practice
+P010,B-NL,Light fixture,B-NL,,,822,252,practice
+P011,B-NL,Light fixture,B-NL,,,105,422,practice
+P012,B,Light fixture,B,,,250,422,practice
+P013,B,Light fixture,B,,,398,422,practice
+P014,B-NL,Light fixture,B-NL,,,543,422,practice
+P015,B,Light fixture,B,,,690,422,practice
+P016,B,Light fixture,B,,,838,422,practice
+P017,B,Light fixture,B,,,521,548,practice
+P018,B,Light fixture,B,,,667,548,practice
+P019,B-NL,Light fixture,B-NL,,,813,548,practice
+P020,Occupancy sensor,Sensor,Occupancy sensor,,,115,28,practice
+P021,Occupancy sensor,Sensor,Occupancy sensor,,,264,334,practice
+P022,Occupancy sensor,Sensor,Occupancy sensor,,,75,545,practice
+P023,Occupancy sensor,Sensor,Occupancy sensor,,,290,542,practice
+P024,Occupancy sensor,Sensor,Occupancy sensor,,,570,605,practice
+P025,E1-NL,Light fixture,E1-NL,,,37,594,practice
+P026,E1-NL,Light fixture,E1-NL,,,131,594,practice
+P027,E1-NL,Light fixture,E1-NL,,,242,594,practice
+P028,E1-NL,Light fixture,E1-NL,,,338,594,practice
+P029,Single pole wall switch,Switch,Single pole wall switch,,,847,341,practice
