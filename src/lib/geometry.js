@@ -20,6 +20,24 @@ export function clientToImage({ clientX, clientY, imageRect, zoom }) {
   return { x: Math.round(p.x), y: Math.round(p.y) }
 }
 
+// The image point at the centre of the part of the image the participant can see
+// (step 10: x,y of zoom_changed / panned). `viewRect` = the scroll box's visible
+// area and `imageRect` = the drawn <img>, both in client px. The two are
+// intersected first, so grey pane around a small or short image never moves the
+// centre off the drawing. Goes through clientToImage (Hard rule 7).
+export function visibleImageCenter({ viewRect, imageRect, zoom }) {
+  const left = Math.max(viewRect.left, imageRect.left)
+  const right = Math.min(viewRect.right, imageRect.right)
+  const top = Math.max(viewRect.top, imageRect.top)
+  const bottom = Math.min(viewRect.bottom, imageRect.bottom)
+  return clientToImage({
+    clientX: right > left ? (left + right) / 2 : imageRect.left + imageRect.width / 2,
+    clientY: bottom > top ? (top + bottom) / 2 : imageRect.top + imageRect.height / 2,
+    imageRect,
+    zoom,
+  })
+}
+
 // The image point at the centre of the scroll box's visible area.
 export function viewportCenterImage({ scrollLeft, scrollTop, viewWidth, viewHeight, zoom }) {
   const p = screenToImage({ left: scrollLeft + viewWidth / 2, top: scrollTop + viewHeight / 2, zoom })

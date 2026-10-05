@@ -285,6 +285,34 @@ test('events are replayed by client_ts, not file order', () => {
   assert.equal(scoreSheet(ev, key, 40).overs[0].caught, false)
 })
 
+test('zoom_changed / panned / legend_toggled never change a score (step 10)', () => {
+  const key = {
+    manipulations: [
+      { id: 'D1', direction: 'UNDER', x: 100, y: 100, cost: 5, pair_id: 'p1' },
+      { id: 'S-1', direction: 'OVER', x: 0, y: 0, cost: 7, pair_id: 'p1' },
+    ],
+  }
+  const base = [
+    { client_ts: 1, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 5, action: 'rejected', item_id: 'S-1', old_value: null, new_value: 'rejected' },
+    { client_ts: 9, action: 'confirmed', item_id: 'sheet1', new_value: '123' },
+  ]
+  // View events centred exactly on the deleted item and named like ids.
+  const view = [
+    { client_ts: 2, action: 'zoom_changed', item_id: 'wheel', x: 100, y: 100, old_value: '52', new_value: '81' },
+    { client_ts: 3, action: 'panned', item_id: 'drag', x: 100, y: 100, new_value: '81' },
+    { client_ts: 4, action: 'panned', item_id: 'scroll', x: 100, y: 100, new_value: '81' },
+    { client_ts: 6, action: 'zoom_changed', item_id: 'button', x: 100, y: 100, old_value: '81', new_value: '101' },
+    { client_ts: 7, action: 'zoom_changed', item_id: 'fit', x: 100, y: 100, old_value: '101', new_value: '52' },
+    { client_ts: 8, action: 'legend_toggled', new_value: 'closed' },
+  ]
+  const plain = scoreSheet(base, key, 40)
+  const withView = scoreSheet([...base, ...view], key, 40)
+  assert.deepEqual(withView, plain)
+  assert.equal(withView.unders[0].caught, false) // a view centred on it is not an add
+  assert.equal(withView.overs[0].caught, true)
+})
+
 console.log('output + CLI')
 
 test('manipulations CSV: one row per manipulation with the required columns', () => {

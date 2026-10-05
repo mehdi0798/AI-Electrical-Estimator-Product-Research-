@@ -646,6 +646,20 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             panDisabled={placing}
             onImageClick={handleDrawingClick}
             onLoad={() => setImgLoaded(true)}
+            // Step 10: one event per zoom / pan gesture. item_id = how; x,y = centre
+            // of the visible drawing in image px; values = zoom % (integer).
+            onZoomChange={(e) =>
+              logEvent({
+                action: 'zoom_changed', item_id: e.how, x: e.center?.x ?? null, y: e.center?.y ?? null,
+                old_value: e.oldPct, new_value: e.newPct, client_ts: e.ts,
+              })
+            }
+            onPan={(e) =>
+              logEvent({
+                action: 'panned', item_id: e.how, x: e.center?.x ?? null, y: e.center?.y ?? null,
+                new_value: e.pct, client_ts: e.ts,
+              })
+            }
           >
             {(zoom) => {
               const box = jumpBoxStyle(zoom)

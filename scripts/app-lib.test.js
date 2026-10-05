@@ -26,8 +26,10 @@ import {
   scrollToCenter,
   stepZoom,
   viewportCenterImage,
+  visibleImageCenter,
   zoomAroundPoint,
 } from '../src/lib/geometry.js'
+import { createGesture, createScrollFilter, zoomPercent } from '../src/lib/gestures.js'
 import { applyEdit, bidTotal, catalogIndex, displayItem } from '../src/lib/edits.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
 
@@ -471,6 +473,130 @@ test('isAtScroll tells a settled programmatic scroll from a participant pan', ()
   assert.equal(isAtScroll({ left: 451, top: 93 }, { left: 450, top: 93 }), true)
   assert.equal(isAtScroll({ left: 470, top: 93 }, { left: 450, top: 93 }), false)
   assert.equal(isAtScroll({ left: 0, top: 0 }, null), false)
+})
+
+// --- Step 10: zoom and pan logging (one gesture = one event) ---------------------
+
+// A fake clock and timers, so debounce tests run instantly and exactly.
+function fakeTime() {
+  let t = 0
+  let nextId = 1
+  const timers = new Map()
+  return {
+    now: () => t,
+    setTimer: (fn, ms) => {
+      const id = nextId++
+      timers.set(id, { fn, at: t + ms })
+      return id
+    },
+    clearTimer: (id) => timers.delete(id),
+    advance(ms) {
+      const end = t + ms
+      for (;;) {
+        const due = [...timers.entries()].filter(([, v]) => v.at <= end).sort((a, b) => a[1].at - b[1].at)[0]
+        if (!due) break
+        t = due[1].at
+        timers.delete(due[0])
+        due[1].fn()
+      }
+      t = end
+    },
+  }
+}
+const gesture = (clock, ends) =>
+  createGesture({ quietMs: 300, onEnd: (start, ts) => ends.push({ start, ts }), ...clock })
+
+test('a wheel burst (ticks < 300 ms apart) logs once, at its last tick, with its first value', () => {
+  const clock = fakeTime()
+  const ends = []
+  const g = gesture(clock, ends)
+  for (let i = 0; i < 20; i++) {
+    g.tick(0.5 + i) // only the first tick's value is the gesture's start
+    clock.advance(50)
+  }
+  assert.equal(ends.length, 0) // still going
+  clock.advance(300)
+  assert.deepEqual(ends, [{ start: 0.5, ts: 950 }])
+  clock.advance(5000)
+  assert.equal(ends.length, 1) // never twice
+})
+
+test('two bursts 400 ms apart log twice; a 299 ms pause stays one gesture', () => {
+  const clock = fakeTime()
+  const ends = []
+  const g = gesture(clock, ends)
+  g.tick('a')
+  clock.advance(299)
+  g.tick('b')
+  clock.advance(400) // 300 ms quiet -> end
+  g.tick('c')
+  clock.advance(400)
+  assert.deepEqual(ends.map((e) => e.start), ['a', 'c'])
+})
+
+test('flush ends an open gesture now (unmount, other gesture); flush or cancel when idle do nothing', () => {
+  const clock = fakeTime()
+  const ends = []
+  const g = gesture(clock, ends)
+  g.flush()
+  assert.equal(ends.length, 0)
+  g.tick('a')
+  assert.equal(g.active, true)
+  g.flush()
+  assert.equal(g.active, false)
+  clock.advance(1000) // the timer was cleared: no second event
+  assert.deepEqual(ends.map((e) => e.start), ['a'])
+  g.tick('b')
+  g.cancel()
+  clock.advance(1000)
+  assert.equal(ends.length, 1)
+})
+
+test('scroll filter: an app scroll is not a pan, the participant scroll after it is', () => {
+  const clock = fakeTime()
+  const f = createScrollFilter({ now: clock.now })
+  assert.equal(f.isProgrammatic({ left: 10, top: 0 }), false) // nothing expected
+  f.expect({ left: 400, top: 200 }) // e.g. click-to-jump, smooth scroll
+  assert.equal(f.isProgrammatic({ left: 120, top: 60 }), true) // on the way
+  assert.equal(f.isProgrammatic({ left: 398.6, top: 199.3 }), true) // ease-out tail, still the app
+  assert.equal(f.isProgrammatic({ left: 399.8, top: 200 }), true) // arrived
+  assert.equal(f.isProgrammatic({ left: 380, top: 201 }), false) // the participant now
+})
+
+test('scroll filter: an expectation expires, and participant intent clears it', () => {
+  const clock = fakeTime()
+  const f = createScrollFilter({ now: clock.now })
+  f.expect({ left: 0, top: 0 }, 300)
+  clock.advance(301)
+  assert.equal(f.isProgrammatic({ left: 50, top: 0 }), false) // expired: a real scroll
+  f.expect({ left: 0, top: 0 }, 300)
+  f.clear() // e.g. a plain wheel tick
+  assert.equal(f.isProgrammatic({ left: 50, top: 0 }), false)
+})
+
+test('zoom is logged as an integer %, 100% = one image px per screen px', () => {
+  assert.equal(zoomPercent(1), 100)
+  assert.equal(zoomPercent(1100 / 2019), 54) // sheet 3 at a 1100 px pane
+  assert.equal(zoomPercent(0.25), 25)
+  assert.equal(zoomPercent(4), 400)
+  assert.equal(zoomPercent(1.2549), 125)
+})
+
+test('visibleImageCenter: centre of the visible image in image px, at any zoom and offset', () => {
+  // Image 2000x1000 drawn at zoom 0.5 (1000x500 on screen), scrolled so the view
+  // (400x300 at client 100,50) shows screen px 300..700 x 100..400 of it.
+  const zoom = 0.5
+  const imageRect = { left: 100 - 300, top: 50 - 100, right: 100 - 300 + 1000, bottom: 50 - 100 + 500, width: 1000, height: 500 }
+  const viewRect = { left: 100, top: 50, right: 500, bottom: 350 }
+  assert.deepEqual(visibleImageCenter({ viewRect, imageRect, zoom }), { x: 1000, y: 500 })
+  // A short image centred in a tall pane: the grey above and below is ignored.
+  const short = { left: 150, top: 200, right: 450, bottom: 300, width: 300, height: 100 }
+  assert.deepEqual(visibleImageCenter({ viewRect: { left: 100, top: 0, right: 500, bottom: 800 }, imageRect: short, zoom: 0.25 }), { x: 600, y: 200 })
+  // Matches viewportCenterImage when the image starts at the pane's corner.
+  const z = 2
+  const c = viewportCenterImage({ scrollLeft: 400, scrollTop: 100, viewWidth: 400, viewHeight: 300, zoom: z })
+  const r = { left: -400, top: -100, right: -400 + 4000, bottom: -100 + 2000, width: 4000, height: 2000 }
+  assert.deepEqual(visibleImageCenter({ viewRect: { left: 0, top: 0, right: 400, bottom: 300 }, imageRect: r, zoom: z }), c)
 })
 
 console.log(`\n${passed} tests passed`)
