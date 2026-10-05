@@ -48,9 +48,9 @@ test('every entry has ONLY name, type and unit_price (no counts, sheets or descr
   assert.doesNotMatch(CATALOG_TEXT, /"(count_all_sheets|sheets|description)"\s*:/)
 })
 
-test('38 names, no duplicates, exactly the nine types', () => {
-  assert.equal(CATALOG.length, 38)
-  assert.equal(new Set(CATALOG.map((e) => e.name)).size, 38)
+test('39 names (38 on sheets 1-6, plus B for the practice sheet), no duplicates, exactly the nine types', () => {
+  assert.equal(CATALOG.length, 39)
+  assert.equal(new Set(CATALOG.map((e) => e.name)).size, 39)
   assert.deepEqual([...new Set(CATALOG.map((e) => e.type))].sort(), [...TYPES].sort())
 })
 

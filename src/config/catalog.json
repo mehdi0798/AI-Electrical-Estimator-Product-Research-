@@ -3,6 +3,7 @@
   { "name": "X-DOUBLE", "type": "Exit sign", "unit_price": 290 },
   { "name": "X-SINGLE", "type": "Exit sign", "unit_price": 260 },
   { "name": "Junction box", "type": "Junction box", "unit_price": 95 },
+  { "name": "B", "type": "Light fixture", "unit_price": 310 },
   { "name": "B-NL", "type": "Light fixture", "unit_price": 310 },
   { "name": "CL4", "type": "Light fixture", "unit_price": 240 },
   { "name": "D", "type": "Light fixture", "unit_price": 420 },

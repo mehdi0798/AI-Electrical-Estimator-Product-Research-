@@ -3,6 +3,7 @@ IN-FAN,Ceiling fan,Ceiling fan,4,4,680
 X-DOUBLE,Exit sign,"Exit sign, double face",2,5,290
 X-SINGLE,Exit sign,"Exit sign, single face",1,1,260
 Junction box,Junction box,,6,6,95
+B,Light fixture,"Recessed light, type B (practice sheet only)",0,,310
 B-NL,Light fixture,"Recessed light, emergency, type B",1,1,310
 CL4,Light fixture,"Strip light, emergency, type CL4",2,4,240
 D,Light fixture,"Light fixture, type D",11,4 5,420
