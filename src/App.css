@@ -143,13 +143,62 @@
   min-height: 0;
 }
 
-/* Left: drawing */
+/* Left: drawing, legend panel below it (step 12). With the legend open the
+   drawing gets 2/3 of the column, the legend (header included) 1/3; closed, the
+   drawing gets the full height. */
 .drawing-pane {
   position: relative;
   flex: 1 1 60%;
   min-width: 0;
   padding: var(--s4);
   background: var(--bg-sunken);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.drawing-pane > .drawing-viewer {
+  flex: 2 1 0;
+  min-height: 0;
+  height: auto;
+}
+.legend-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.legend-panel.open {
+  flex: 1 1 0;
+}
+.legend-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  margin-bottom: var(--s1);
+  height: 28px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.legend-toggle:hover {
+  background: var(--surface-2);
+}
+.legend-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+}
+.legend-body > .legend-viewer {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
 }
 /* --- Zoomable viewer (ZoomableImage, v0.3 step 8) --- */
 .zi {

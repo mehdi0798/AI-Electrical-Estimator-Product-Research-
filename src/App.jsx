@@ -363,6 +363,17 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const imgRef = useRef(null) // the drawing <img> (inside ZoomableImage)
   const viewerRef = useRef(null) // ZoomableImage: zoom, fit, centring (step 8)
 
+  // Legend panel under the drawing (v0.3 step 12). Every sheet opens with it
+  // open (Hard rule 8). Closing unmounts it, so it always reopens at fit width.
+  // Only the toggle is logged; legend zoom and scroll are not.
+  const [legendOpen, setLegendOpen] = useState(true)
+  const legendImgRef = useRef(null)
+  const toggleLegend = () => {
+    const next = !legendOpen
+    logEvent({ action: 'legend_toggled', new_value: next ? 'open' : 'closed' })
+    setLegendOpen(next)
+  }
+
   // Re-render once the drawing has loaded so dots can be placed (restored
   // additions exist before the image does).
   const [, setImgLoaded] = useState(false)
@@ -635,7 +646,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       </header>
 
       <main className="layout">
-        {/* Left: drawing, opened at fit width; zoom, pan (ZoomableImage, step 8) */}
+        {/* Left: drawing, opened at fit width; zoom, pan (ZoomableImage, step 8);
+            legend panel below it (step 12) */}
         <section className="drawing-pane">
           <ZoomableImage
             ref={viewerRef}
@@ -676,6 +688,25 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
               )
             }}
           </ZoomableImage>
+
+          {/* Legend: one image for all sheets; zoom and scroll only (no boxes,
+              dots or Add missing), nothing logged but the toggle. */}
+          <div className={'legend-panel' + (legendOpen ? ' open' : '')}>
+            <button
+              type="button"
+              className="legend-toggle"
+              aria-expanded={legendOpen}
+              aria-controls="legend-viewer"
+              onClick={toggleLegend}
+            >
+              Legend <span aria-hidden="true">{legendOpen ? '▾' : '▸'}</span>
+            </button>
+            {legendOpen && (
+              <div id="legend-viewer" className="legend-body">
+                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt="Electrical legend" className="legend-viewer" />
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Right: full list, sorted by confidence */}

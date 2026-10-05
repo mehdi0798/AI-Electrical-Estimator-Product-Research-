@@ -22,7 +22,8 @@ import { createGesture, createScrollFilter, zoomPercent } from './lib/gestures'
 //   onPan({ how: 'drag'|'scroll', pct, center, ts })
 // A wheel or scroll burst ends after 300 ms without a tick. Fits the app does by
 // itself (sheet open, window resize) and scrolls the app makes (re-anchoring a
-// zoom, click-to-jump, fit) are not reported.
+// zoom, click-to-jump, fit) or the layout causes (resize, legend toggle) are not
+// reported.
 const DRAG_THRESHOLD = 4
 const GESTURE_QUIET_MS = 300
 const INSTANT_SCROLL_MS = 300 // an instant app scroll: its scroll event comes next frame
@@ -88,6 +89,18 @@ const ZoomableImage = forwardRef(function ZoomableImage(
     createGesture({ quietMs: GESTURE_QUIET_MS, onEnd: (_, ts) => reportPan('scroll', ts) }))
   const filterRef = useRef(null)
   const scrollFilter = lazy(filterRef, () => createScrollFilter())
+  // The view's size as last seen. A scroll that comes with a new size is the
+  // browser clamping the position after a layout change (window resize, legend
+  // opened or closed), never the participant. Updated here AND by the resize
+  // observer, so it works whichever of the two the browser reports first.
+  const viewSize = useRef(null)
+  const sizeChanged = () => {
+    const b = box()
+    const now = `${b.clientWidth}x${b.clientHeight}`
+    const changed = viewSize.current !== null && viewSize.current !== now
+    viewSize.current = now
+    return changed
+  }
   // Before the app or another gesture moves the view, close the open gestures,
   // so each reports the view as the participant left it.
   const endGestures = () => {
@@ -177,6 +190,7 @@ const ZoomableImage = forwardRef(function ZoomableImage(
     let lastWidth = b.clientWidth
     const ro = new ResizeObserver(() => {
       endGestures()
+      sizeChanged()
       scrollFilter.expect({ left: b.scrollLeft, top: b.scrollTop }, INSTANT_SCROLL_MS)
       if (b.clientWidth === lastWidth) return
       lastWidth = b.clientWidth
@@ -223,6 +237,7 @@ const ZoomableImage = forwardRef(function ZoomableImage(
   const onScroll = () => {
     const b = box()
     if (!b || drag.current?.moved) return // a drag reports itself
+    if (sizeChanged()) return // layout clamped the position
     if (scrollFilter.isProgrammatic({ left: b.scrollLeft, top: b.scrollTop })) return
     if (!scrollPan.active) wheelZoom.flush()
     viewCenter()
