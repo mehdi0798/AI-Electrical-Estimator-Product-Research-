@@ -285,6 +285,31 @@ test('events are replayed by client_ts, not file order', () => {
   assert.equal(scoreSheet(ev, key, 40).overs[0].caught, false)
 })
 
+test('real items edited: final name differs from the original; phantoms and edit-backs excluded', () => {
+  const key = {
+    manipulations: [
+      { id: 'D1', direction: 'UNDER', x: 100, y: 100, cost: 5, pair_id: 'p1' },
+      { id: 'S-9', direction: 'OVER', x: 0, y: 0, cost: 7, pair_id: 'p1' },
+    ],
+  }
+  const ev = [
+    { client_ts: 1, action: 'sheet_opened', item_id: 'sheet1' },
+    { client_ts: 2, action: 'edited', item_id: 'S-1', old_value: 'E2', new_value: 'E1' },
+    { client_ts: 3, action: 'edited', item_id: 'S-1', old_value: 'E1', new_value: 'D6' }, // twice: E2 -> D6
+    { client_ts: 4, action: 'edited', item_id: 'S-2', old_value: 'W2', new_value: 'D6' },
+    { client_ts: 5, action: 'edited', item_id: 'S-2', old_value: 'D6', new_value: 'W2' }, // back: not counted
+    { client_ts: 6, action: 'edited', item_id: 'S-9', old_value: 'E2', new_value: 'E1' }, // phantom
+    { client_ts: 7, action: 'confirmed', item_id: 'sheet1', new_value: '1' },
+  ]
+  const r = scoreSheet(ev, key, 40)
+  assert.deepEqual(r.realEdited, [{ id: 'S-1', from: 'E2', to: 'D6' }])
+  assert.equal(r.overs[0].caught, false) // an edited phantom is still not caught
+  // Caught / not caught is the same with or without the edit events.
+  const noEdits = scoreSheet(ev.filter((e) => e.action !== 'edited'), key, 40)
+  assert.deepEqual(r.overs, noEdits.overs)
+  assert.deepEqual(r.unders, noEdits.unders)
+})
+
 test('zoom_changed / panned / legend_toggled never change a score (step 10)', () => {
   const key = {
     manipulations: [
@@ -360,6 +385,7 @@ test('CLI runs end to end on the fixture and writes the CSV', () => {
     assert.match(run.stdout, /nearest deleted U2 at 860\.2px/)
     assert.match(run.stdout, /nearest deleted U3 at 45\.0px/)
     assert.match(run.stdout, /Real items rejected: 1/)
+    assert.match(run.stdout, /Real items edited: \d+/)
     // OVER: A/sheet1 1 + A/sheet2 0 + B/sheet2 1. UNDER: A/sheet1 1 + A/sheet2 1 + B 0.
     assert.match(run.stdout, /OVER caught:  2\/6/)
     assert.match(run.stdout, /UNDER caught: 2\/6/)

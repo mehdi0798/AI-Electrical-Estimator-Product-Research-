@@ -240,6 +240,9 @@ export function scoreSheet(events, key, radius) {
   // Final status per list row. Replay new_value, NOT the action name: toggling a
   // status off logs action 'rejected' (the status undone) with new_value null.
   const finalStatus = new Map() // item_id -> 'accepted' | 'rejected' (absent = untouched)
+  // Name edits per list row: { from: name before the first edit, to: latest name }.
+  // Reported only; never part of caught / not caught.
+  const edits = new Map()
   // add_missing records, in order. add_removed marks the latest live add with that id.
   const adds = []
   let opened = 0
@@ -268,6 +271,12 @@ export function scoreSheet(events, key, radius) {
           }
         }
         break
+      case 'edited':
+        if (e.item_id) {
+          const prev = edits.get(e.item_id)
+          edits.set(e.item_id, { from: prev ? prev.from : e.old_value, to: e.new_value })
+        }
+        break
       case 'add_missing':
         adds.push({ id: e.item_id, x: e.x, y: e.y, name: e.new_value, removed: false })
         break
@@ -284,7 +293,7 @@ export function scoreSheet(events, key, radius) {
         break
       }
       default:
-        break // row_clicked, submitted, cancelled, session_started: not scored
+        break // row_clicked, submitted, cancelled, session_started, zoom/pan/legend: not scored
     }
     prevAction = e.action
   }
@@ -368,6 +377,11 @@ export function scoreSheet(events, key, radius) {
   const realRejected = [...finalStatus.entries()]
     .filter(([id, s]) => s === 'rejected' && !phantomIds.has(id))
     .map(([id]) => id)
+  // Real (non-phantom) rows whose final name differs from their original name.
+  // A row edited back to its original name is not counted.
+  const realEdited = [...edits.entries()]
+    .filter(([id, ed]) => !phantomIds.has(id) && ed.to !== ed.from)
+    .map(([id, ed]) => ({ id, from: ed.from, to: ed.to }))
 
   return {
     overs,
@@ -375,6 +389,7 @@ export function scoreSheet(events, key, radius) {
     addReport,
     unmatchedAdds: addReport.filter((a) => !a.removed && a.matchedId === null),
     realRejected,
+    realEdited,
     confirmedBid,
     resumed,
     warnings,
@@ -508,6 +523,10 @@ export function formatReport(results, skipped, radius, { dropped = 0, runWarning
 
     if (r.resumed) out.push(`  Resumed after reload: ${r.resumed} time(s) (state restored, not a warning)`)
     out.push(`  Real items rejected: ${r.realRejected.length}`)
+    out.push(
+      `  Real items edited: ${r.realEdited.length}` +
+        (r.realEdited.length ? ` (${r.realEdited.map((x) => `${x.id}: ${x.from} -> ${x.to}`).join(', ')})` : ''),
+    )
     out.push(`  add_missing matching no deleted item: ${r.unmatchedAdds.length}`)
     for (const w of r.warnings) out.push(`  WARNING: ${w}`)
     out.push('')
