@@ -7,6 +7,7 @@ import { nextAddId } from './lib/addIds'
 import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './lib/edits'
 import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
 import ZoomableImage from './ZoomableImage'
+import { T, nameLabel, sheetLabel, sheetOf, typeLabel } from './lib/fr'
 import {
   clearSession,
   loadSession,
@@ -47,21 +48,21 @@ function TypeNamePicker({ name, onChange }) {
   return (
     <>
       <label className="field">
-        <span>Type</span>
+        <span>{T.type}</span>
         <select value={type} onChange={(e) => onChange(CAT.namesByType.get(e.target.value)[0])} autoFocus>
           {CAT.types.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {typeLabel(t)}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        <span>Name</span>
+        <span>{T.name}</span>
         <select value={name} onChange={(e) => onChange(e.target.value)}>
           {CAT.namesByType.get(type).map((n) => (
             <option key={n} value={n}>
-              {n}
+              {nameLabel(n)}
             </option>
           ))}
         </select>
@@ -162,7 +163,7 @@ export default function App() {
   const sheetId = order[index]
   const isPractice = sheetId === 'practice'
   // k of 6 counts only the real sheets; practice sits at order index 0.
-  const headerPosition = isPractice ? 'Practice' : `Sheet ${index} of ${REAL_SHEETS.length}`
+  const headerPosition = isPractice ? T.practice : sheetOf(index, REAL_SHEETS.length)
   return (
     <ReviewScreen
       key={sheetId}
@@ -197,26 +198,26 @@ function ResumeScreen({ saved, onResume, onDiscard }) {
   const sheetId = saved.order[saved.index]
   const where =
     sheetId === 'practice'
-      ? 'Practice sheet'
-      : `Sheet ${saved.index} of ${REAL_SHEETS.length}`
+      ? T.practiceSheet
+      : sheetOf(saved.index, REAL_SHEETS.length)
   return (
     <div className="screen">
       <div className="card">
         <div className="card-brand">
           <Wordmark />
         </div>
-        <h1 className="card-title">Unfinished session</h1>
+        <h1 className="card-title">{T.unfinishedSession}</h1>
         <p className="card-sub">
-          Session {saved.session_label} · Participant {saved.participant} · {where}
-          {saved.phase === 'between' ? ' (done)' : ''}
+          {T.session} {saved.session_label} · {T.participant} {saved.participant} · {where}
+          {saved.phase === 'between' ? T.done : ''}
         </p>
         <button type="button" className="btn primary wide" onClick={onResume}>
-          Resume session
+          {T.resumeSession}
         </button>
         <button type="button" className="btn ghost wide" onClick={onDiscard}>
-          Discard and start new
+          {T.discardStartNew}
         </button>
-        <p className="card-hint">Everything already done in this session stays logged.</p>
+        <p className="card-hint">{T.staysLogged}</p>
       </div>
     </div>
   )
@@ -235,23 +236,23 @@ function StartScreen({ onStart }) {
         <div className="card-brand">
           <Wordmark large />
         </div>
-        <h1 className="card-title">Session setup</h1>
-        <p className="card-sub">Practice sheet first, then the six study sheets.</p>
+        <h1 className="card-title">{T.sessionSetup}</h1>
+        <p className="card-sub">{T.setupSub}</p>
 
         <label className="field">
-          <span>Participant</span>
+          <span>{T.participant}</span>
           <select value={participant} onChange={(e) => setParticipant(e.target.value)}>
-            <option value="A">A — sheets 1 → 6</option>
-            <option value="B">B — sheets 6 → 1</option>
+            <option value="A">{T.optionA}</option>
+            <option value="B">{T.optionB}</option>
           </select>
         </label>
 
         <label className="field">
-          <span>Session label</span>
+          <span>{T.sessionLabel}</span>
           <input
             type="text"
             value={sessionLabel}
-            placeholder="e.g. pilot1, real"
+            placeholder={T.sessionPlaceholder}
             onChange={(e) => setSessionLabel(e.target.value)}
           />
         </label>
@@ -262,7 +263,7 @@ function StartScreen({ onStart }) {
           disabled={!canStart}
           onClick={() => onStart(participant, sessionLabel.trim())}
         >
-          Start session
+          {T.startSession}
         </button>
       </div>
     </div>
@@ -278,10 +279,10 @@ function BetweenScreen({ onContinue }) {
         <div className="card-brand">
           <Wordmark />
         </div>
-        <h1 className="card-title">Sheet done.</h1>
-        <p className="card-sub">Click Continue when ready.</p>
+        <h1 className="card-title">{T.sheetDone}</h1>
+        <p className="card-sub">{T.clickContinue}</p>
         <button type="button" className="btn primary wide" onClick={onContinue}>
-          Continue
+          {T.continue}
         </button>
       </div>
     </div>
@@ -297,8 +298,8 @@ function EndScreen() {
         <div className="card-brand">
           <Wordmark />
         </div>
-        <h1 className="card-title">Session complete.</h1>
-        <p className="card-sub">Thank you.</p>
+        <h1 className="card-title">{T.sessionComplete}</h1>
+        <p className="card-sub">{T.thankYou}</p>
       </div>
     </div>
   )
@@ -314,17 +315,17 @@ function AnalysePanel({ running, durationMs, onAnalyse }) {
       {running ? (
         <div className="analyse-running" role="status" aria-live="polite">
           <div className="analyse-spinner" aria-hidden="true" />
-          <div className="analyse-title">Detecting symbols…</div>
+          <div className="analyse-title">{T.detectingSymbols}</div>
           <div className="analyse-track" aria-hidden="true">
             <div className="analyse-fill" style={{ animationDuration: `${durationMs}ms` }} />
           </div>
         </div>
       ) : (
         <div className="analyse-idle">
-          <div className="analyse-title">Drawing loaded</div>
-          <p className="analyse-text">Run the analysis to detect electrical symbols on this sheet.</p>
+          <div className="analyse-title">{T.drawingLoaded}</div>
+          <p className="analyse-text">{T.runAnalysis}</p>
           <button type="button" className="btn primary" onClick={onAnalyse}>
-            Analyse drawing
+            {T.analyseDrawing}
           </button>
         </div>
       )}
@@ -528,13 +529,13 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   }
 
   if (error) {
-    return <div className="state error">Could not load sheet: {error}</div>
+    return <div className="state error">{T.couldNotLoad} {error}</div>
   }
   if (!sheet) {
     return (
       <div className="state" role="status">
         <div className="spinner" aria-hidden="true" />
-        Loading sheet…
+        {T.loadingSheet}
       </div>
     )
   }
@@ -635,10 +636,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           <Wordmark />
         </div>
         <div className="sheet-name">
-          {headerPosition} · {sheet.name}
+          {headerPosition} · {sheetLabel(sheet.name)}
         </div>
         <div className="bid">
-          <span className="bid-label">Bid total</span>
+          <span className="bid-label">{T.bidTotal}</span>
           <span className="bid-amount">{analysed ? euro(bidTotal) : '—'}</span>
         </div>
         <button
@@ -647,7 +648,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           onClick={submitSheet}
           disabled={!analysed}
         >
-          Submit sheet
+          {T.submitSheet}
         </button>
       </header>
 
@@ -659,7 +660,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             ref={viewerRef}
             imgRef={imgRef}
             src={sheet.image}
-            alt={sheet.name}
+            alt={sheetLabel(sheet.name)}
             className={'drawing-viewer' + (placing ? ' placing' : '')}
             startZoom={DRAWING_START_ZOOM}
             panDisabled={placing}
@@ -706,11 +707,11 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
               aria-controls="legend-viewer"
               onClick={toggleLegend}
             >
-              Legend <span aria-hidden="true">{legendOpen ? '▾' : '▸'}</span>
+              {T.legend} <span aria-hidden="true">{legendOpen ? '▾' : '▸'}</span>
             </button>
             {legendOpen && (
               <div id="legend-viewer" className="legend-body">
-                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt="Electrical legend" className="legend-viewer" startZoom={LEGEND_START_ZOOM} />
+                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt={T.legendAlt} className="legend-viewer" startZoom={LEGEND_START_ZOOM} />
               </div>
             )}
           </div>
@@ -727,13 +728,13 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           ) : (
           <>
           <div className="list-header">
-            Detected {items.length} items · Sorted by confidence
+            {T.detected(items.length)}
           </div>
           <div className="list-columns" aria-hidden="true">
-            <span className="col-main">Item · Type</span>
-            <span className="col-conf">Conf.</span>
-            <span className="col-price">Unit price</span>
-            <span className="col-actions">Review</span>
+            <span className="col-main">{T.colItemType}</span>
+            <span className="col-conf">{T.colConf}</span>
+            <span className="col-price">{T.colUnitPrice}</span>
+            <span className="col-actions">{T.colReview}</span>
           </div>
           <ul className="item-list">
             {items.map((item) => {
@@ -756,8 +757,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                   }}
                 >
                   <div className="item-main">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-type"> · {item.type}</span>
+                    <span className="item-name">{nameLabel(item.name)}</span>
+                    <span className="item-type"> · {typeLabel(item.type)}</span>
                   </div>
                   <div className="item-meta">
                     <span className="item-conf">
@@ -771,7 +772,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                           'act accept' + (status === 'accepted' ? ' active' : '')
                         }
                         aria-pressed={status === 'accepted'}
-                        title="Accept"
+                        title={T.accept}
                         onClick={(e) => {
                           e.stopPropagation()
                           changeStatus(item.id, 'accepted')
@@ -785,7 +786,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                           'act reject' + (status === 'rejected' ? ' active' : '')
                         }
                         aria-pressed={status === 'rejected'}
-                        title="Reject"
+                        title={T.reject}
                         onClick={(e) => {
                           e.stopPropagation()
                           changeStatus(item.id, 'rejected')
@@ -796,8 +797,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                       <button
                         type="button"
                         className="act edit"
-                        title="Edit"
-                        aria-label="Edit"
+                        title={T.edit}
+                        aria-label={T.edit}
                         onClick={(e) => {
                           e.stopPropagation()
                           if (placing) return
@@ -816,14 +817,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           {/* Your Additions — appended below the ranked list, never sorted in. */}
           {additions.length > 0 && (
             <div className="additions">
-              <div className="additions-header">Your Additions</div>
+              <div className="additions-header">{T.yourAdditions}</div>
               <ul className="item-list additions-list">
                 {additions.map((a) => (
                   <li className="item-row addition-row" key={a.id}>
                     <div className="item-main">
-                      <span className="item-name">{a.name}</span>
-                      <span className="item-type"> · {a.type}</span>
-                      <span className="added-badge">Added</span>
+                      <span className="item-name">{nameLabel(a.name)}</span>
+                      <span className="item-type"> · {typeLabel(a.type)}</span>
+                      <span className="added-badge">{T.added}</span>
                     </div>
                     <div className="item-meta">
                       <span className="item-conf">—</span>
@@ -832,7 +833,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                         <button
                           type="button"
                           className="act reject"
-                          title="Remove"
+                          title={T.remove}
                           onClick={() => removeAddition(a.id)}
                         >
                           ✕
@@ -850,7 +851,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                 symbol is ever covered while placing. The button below is Cancel. */}
             {placing && !draft && (
               <div className="placement-hint" role="status">
-                Click on the drawing to place the missing item
+                {T.placeHint}
               </div>
             )}
             <button
@@ -858,7 +859,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
               className={'add-btn' + (placing ? ' active' : '')}
               onClick={placing ? cancelPlacement : startPlacement}
             >
-              {placing ? 'Cancel' : '+ Add Missing Item'}
+              {placing ? T.cancel : T.addMissingButton}
             </button>
           </div>
           </>
@@ -870,14 +871,14 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       {draft && (
         <div className="popover-backdrop" onClick={cancelPlacement}>
           <div className="popover" onClick={(e) => e.stopPropagation()}>
-            <div className="popover-title">Add missing item</div>
+            <div className="popover-title">{T.addMissingTitle}</div>
             <TypeNamePicker name={draftName} onChange={setDraftName} />
             <div className="popover-actions">
               <button type="button" className="btn ghost" onClick={cancelPlacement}>
-                Cancel
+                {T.cancel}
               </button>
               <button type="button" className="btn primary" onClick={confirmAddition}>
-                Confirm
+                {T.confirm}
               </button>
             </div>
           </div>
@@ -888,18 +889,18 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       {editingItem && (
         <div className="popover-backdrop" onClick={cancelEdit}>
           <div className="popover" onClick={(e) => e.stopPropagation()}>
-            <div className="popover-title">Edit item</div>
+            <div className="popover-title">{T.editItem}</div>
             <p className="popover-sub">
-              Now: {editingItem.name} · {editingItem.type} · {euro(editingItem.unit_price)}
+              {T.now} {nameLabel(editingItem.name)} · {typeLabel(editingItem.type)} · {euro(editingItem.unit_price)}
             </p>
             <TypeNamePicker name={editName} onChange={setEditName} />
-            <p className="popover-sub">Unit price: {euro(CAT.byName.get(editName).unit_price)}</p>
+            <p className="popover-sub">{T.unitPrice} {euro(CAT.byName.get(editName).unit_price)}</p>
             <div className="popover-actions">
               <button type="button" className="btn ghost" onClick={cancelEdit}>
-                Cancel
+                {T.cancel}
               </button>
               <button type="button" className="btn primary" onClick={confirmEdit}>
-                Confirm
+                {T.confirm}
               </button>
             </div>
           </div>
@@ -910,13 +911,13 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
       {confirming && (
         <div className="popover-backdrop" onClick={cancelSubmit}>
           <div className="popover" onClick={(e) => e.stopPropagation()}>
-            <div className="popover-title">Final bid: {euro(bidTotal)}. Confirm?</div>
+            <div className="popover-title">{T.finalBid(euro(bidTotal))}</div>
             <div className="popover-actions">
               <button type="button" className="btn ghost" onClick={cancelSubmit}>
-                Cancel
+                {T.cancel}
               </button>
               <button type="button" className="btn primary" onClick={confirmSubmit}>
-                Confirm
+                {T.confirm}
               </button>
             </div>
           </div>

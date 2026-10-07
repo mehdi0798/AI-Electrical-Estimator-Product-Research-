@@ -10,6 +10,17 @@
 - The practice sheet (old step 8) is now step 14. It comes last so the
   participant practises on the final interface.
 
+## French version (branch `fr`, from `study-v1`)
+- Separate from the study version: `main`, `v0.2` and `v0.3` are not touched.
+- Display text only, all in `src/lib/fr.js`: buttons, headings, screens,
+  dialogs, messages, the Add missing flow, and the type and name labels in
+  the list and the picker. Drawing tags (E2, D8, B-NL...) stay as printed.
+- No data changes: `public/sheets/`, `baseline/`, `answer-key/`, the images
+  and `legend.png` stay byte-identical to `study-v1`.
+- Everything logged to `event_log` stays exactly as in English (same actions,
+  same English names and values), so `score.js` works unchanged.
+- Numbers and prices keep the same format. No new features, no new logging.
+
 ## What this is
 A web app for a research study on automation bias in electrical cost estimating
 (capstone, HUGS 2027 workshop at ICSE). Professional estimators review an

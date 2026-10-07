@@ -32,6 +32,7 @@ import {
 import { createGesture, createScrollFilter, zoomPercent } from '../src/lib/gestures.js'
 import { applyEdit, bidTotal, catalogIndex, displayItem } from '../src/lib/edits.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
+import { NAME_FR, TYPE_FR, nameLabel, sheetLabel, typeLabel } from '../src/lib/fr.js'
 
 let passed = 0
 function test(name, fn) {
@@ -597,6 +598,25 @@ test('visibleImageCenter: centre of the visible image in image px, at any zoom a
   const c = viewportCenterImage({ scrollLeft: 400, scrollTop: 100, viewWidth: 400, viewHeight: 300, zoom: z })
   const r = { left: -400, top: -100, right: -400 + 4000, bottom: -100 + 2000, width: 4000, height: 2000 }
   assert.deepEqual(visibleImageCenter({ viewRect: { left: 0, top: 0, right: 400, bottom: 300 }, imageRect: r, zoom: z }), c)
+})
+
+// --- French version (branch fr): display labels only ------------------------------
+
+test('fr: every catalog type has a French label; every mapped name is a catalog name', () => {
+  for (const e of CATALOG) assert.ok(TYPE_FR[e.type], e.type)
+  const names = new Set(CATALOG.map((e) => e.name))
+  for (const n of Object.keys(NAME_FR)) assert.ok(names.has(n), n)
+})
+
+test('fr: word names are translated, drawing tags are shown as printed', () => {
+  for (const e of CATALOG) {
+    const isTag = /^[A-Z0-9-]+$/.test(e.name)
+    if (isTag) assert.equal(nameLabel(e.name), e.name, e.name)
+    else assert.notEqual(nameLabel(e.name), e.name, e.name)
+  }
+  assert.equal(typeLabel('Receptacle'), 'Prise de courant')
+  assert.equal(sheetLabel('Sheet 3'), 'Feuille 3')
+  assert.equal(sheetLabel('Practice Sheet'), "Feuille d'entraînement")
 })
 
 console.log(`\n${passed} tests passed`)

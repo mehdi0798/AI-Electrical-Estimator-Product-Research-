@@ -3,6 +3,7 @@ import {
   ZOOM_MAX, ZOOM_MIN, clampZoom, fitWidthZoom, imageToScreen, scrollToCenter, stepZoom, visibleImageCenter, zoomAroundPoint,
 } from './lib/geometry'
 import { createGesture, createScrollFilter, zoomPercent } from './lib/gestures'
+import { T } from './lib/fr'
 
 // A zoomable, pannable image (v0.3 step 8). Used for the drawing; step 12 reuses
 // it for the legend. The <img> is drawn at naturalWidth x zoom (no CSS transform),
@@ -348,17 +349,17 @@ const ZoomableImage = forwardRef(function ZoomableImage(
         </div>
       </div>
       <div className="zi-toolbar" role="toolbar" aria-label="Zoom">
-        <button type="button" className="zi-btn" title="Zoom out" aria-label="Zoom out"
+        <button type="button" className="zi-btn" title={T.zoomOut} aria-label={T.zoomOut}
           onClick={() => zoomButton(-1)} disabled={!zoom || zoom <= ZOOM_MIN}>
           −
         </button>
         <span className="zi-level" aria-live="polite">{pct === null ? '' : `${pct}%`}</span>
-        <button type="button" className="zi-btn" title="Zoom in" aria-label="Zoom in"
+        <button type="button" className="zi-btn" title={T.zoomIn} aria-label={T.zoomIn}
           onClick={() => zoomButton(1)} disabled={!zoom || zoom >= ZOOM_MAX}>
           +
         </button>
         <button type="button" className="zi-btn zi-fit" onClick={() => fit('fit')} disabled={!zoom}>
-          Fit width
+          {T.fitWidth}
         </button>
       </div>
     </div>
