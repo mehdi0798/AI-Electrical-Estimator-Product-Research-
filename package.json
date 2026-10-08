@@ -14,6 +14,7 @@
     "build-sheets": "node scripts/build-sheets.js",
     "plant": "node scripts/plant.js",
     "build-legend": "node scripts/build-legend.js",
+    "build-legend-fr": "node scripts/build-legend-fr.js",
     "import-practice": "node scripts/import-practice.js"
   },
   "dependencies": {

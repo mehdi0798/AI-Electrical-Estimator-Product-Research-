@@ -711,7 +711,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             </button>
             {legendOpen && (
               <div id="legend-viewer" className="legend-body">
-                <ZoomableImage imgRef={legendImgRef} src="/legend.png" alt={T.legendAlt} className="legend-viewer" startZoom={LEGEND_START_ZOOM} />
+                <ZoomableImage imgRef={legendImgRef} src="/legend-fr.png" alt={T.legendAlt} className="legend-viewer" startZoom={LEGEND_START_ZOOM} />
               </div>
             )}
           </div>
