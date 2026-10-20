@@ -13,10 +13,10 @@ import { supabase, isSupabaseConfigured } from './supabase'
 //      an older build) is moved to a quarantine key: kept for the researcher to
 //      inspect, never sent, never discarded.
 
-const QUEUE_KEY = 'voltra_event_queue'
-const QUARANTINE_KEY = 'voltra_event_quarantine'
+const QUEUE_KEY = 'voltra_product_event_queue'
+const QUARANTINE_KEY = 'voltra_product_event_quarantine'
 const RETRY_MS = 4000
-const TABLE = 'event_log'
+const TABLE = 'product_event_log'
 
 // The DB columns we send. Anything else on a queued entry (e.g. _qid) is local
 // bookkeeping and must be stripped before insert — PostgREST rejects unknown
