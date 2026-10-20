@@ -1,273 +1,158 @@
-# Project brief for Claude Code
+# CLAUDE.md — Product v1 · Feature 1: All marks on (branch `product`)
 
-## Current status (4 Oct 2026)
-- Branch `v0.2`. Steps 1–7 DONE and committed: real sheets in, name + type,
-  catalog and prices, click-to-jump, edit, errors planted, answer keys
-  written, scoring RADIUS locked at 30.
-- End-to-end test on sheet 1 PASSED: app logged to Supabase, CSV exported,
-  `score.js` scored it correctly.
-- NOW: v0.3, the drawing viewer and the legend. Next: step 8 below.
-- The practice sheet (old step 8) is now step 14. It comes last so the
-  participant practises on the final interface.
+## Status
+- `main` and tag `study-v1` = the frozen study tool. The paper describes it. Never touch them.
+- The full product plan (all features, build order) is in `docs/product/PLAN.md`. Read it only if I ask.
+- NOW: **Feature 1 — All marks on** (flag `allMarks`). Current phase: **Phase 0**
+  (update this line after each phase I confirm; show me the change first).
 
-## What this is
-A web app for a research study on automation bias in electrical cost estimating
-(capstone, HUGS 2027 workshop at ICSE). Professional estimators review an
-AI-style "takeoff" of electrical drawings. The output is NOT produced by a real
-AI: it is a pre-authored list with a few errors planted by the researcher
-(Wizard-of-Oz). The tool must feel like a real, professional estimating tool,
-and it must log everything the participant does so it can be scored later.
+## Why this feature, and why first
+In the study, 2 estimators rejected 12/12 phantom rows each and restored 0/12 missing items each.
+The screen showed **one box at a time**, so they could not see what the AI had covered. All 4 items
+they added landed on symbols that already had a row. Both asked, on their own, for the same thing:
+- P2: "is there any option then I can see all the blue boxes, so that I will get an idea which part is missing?"
+- P1: "if we have bounding box for each element … there is E2 and I can see there is no bounding box around E2"
 
-The study measures one thing: whether estimators catch DELETED items (on the
-drawing but missing from the list, "UNDER") less often than ADDED items
-(phantom rows not on the drawing, "OVER").
+**Goal of this feature:** every row has a mark on the drawing at the same time. A symbol with
+**no mark** is a symbol the AI missed. This turns an invisible error into a visible one.
+
+It is first because every later feature builds on it: zones ("every symbol in this zone has a mark"),
+quick add (the "this symbol already has a row" check uses the marks), the finish panel and count check.
 
 ## Hard rules — never break these
-These protect the experiment. Breaking one invalidates the results.
-1. Deleted items (UNDER) simply have NO row in the list. Nothing on screen may
-   hint that an item is missing. Item ids must show no gap.
-2. Added items (OVER, "phantoms") must look EXACTLY like real rows: same
-   confidence range, same styling, never the last row.
-3. The drawing shows a box ONLY on the row the participant clicked. Never more
-   than one box, never boxes on all items. The only other markers allowed are
-   dots for items the participant added themselves.
-4. The list is sorted by confidence, highest first, and shown IN FULL in a
-   scrollable panel. No truncation, no paging, no grouping.
-5. Log every action with a timestamp. Never lose a log event. The log is the
-   only source of scoring.
-6. The participant app must NEVER read, import, or ship the answer key, the
-   baseline files, or the `handoff/` folder (they contain the deleted items).
-   They live outside `public/` and `src/` and are read only by local scripts.
-7. All x,y values are in ORIGINAL IMAGE PIXELS (naturalWidth/naturalHeight),
-   never screen pixels, at any window size, scroll or ZOOM level. Every
-   conversion goes through one shared function, never ad-hoc math.
-8. Every participant sees the same build: same flags, same sheets, same
-   design. Every sheet opens the same way: start zoom, legend open.
-   Nothing changes between the first and last real session.
+1. Work only on branch `product`. Never commit or push to `main`, `fr`, `v0.2`, `v0.3`.
+   Never move or delete tags `study-v1` and `study-v1-fr`.
+2. Never change study data: `public/sheets/*`, `answer-key/`, `baseline/`, `handoff/`, `planting/`,
+   `scoring.config.json`, and the scoring logic in `scripts/score.js`.
+3. The app never reads `answer-key/`, `baseline/` or `handoff/`. Marks come ONLY from the sheet JSON
+   rows and the user's own additions. **A missed item must have no mark.** The app must not know
+   where missed items are.
+4. All x,y are ORIGINAL IMAGE PIXELS. Every image↔screen conversion goes through `src/lib/geometry.js`.
+   No ad-hoc math in components.
+5. Log every user action once, with the existing `logEvent` (keeps the localStorage queue).
+   Keep every existing action name and column. Logs go to `product_event_log`.
+6. Everything new sits behind flag `allMarks` in `src/config/features.json`.
+   `allMarks: false` = the app looks and logs exactly like `study-v1` (only the table name differs).
+7. Never invent a price.
+
+If a task conflicts with a hard rule: stop and tell me.
+
+## What to build (the spec)
+1. **All marks.** Every row of the current sheet gets a ring on the drawing at its x,y, at the same time.
+   - Thin **ring**, not a filled box, so the symbol stays readable.
+   - Diameter **24 image px**, never smaller than **16 screen px**. (Some symbols are 18 px apart on
+     sheets 3 and 6; they must still show as two rings.)
+2. **Colour by type** (the 9 types in `src/config/catalog.json`). **Status by line style + small icon**,
+   so colour is never the only signal:
+   | Status | Look |
+   |---|---|
+   | not decided | thin solid ring |
+   | accepted | thicker solid ring + small ✓ |
+   | rejected | grey dashed ring + small × (stays visible) |
+   | added by the user | small diamond, one colour for all additions (replaces today's dot) |
+   | selected row | the existing blue jump box, drawn on top |
+3. **Type chips** above the drawing, with counts: `All · Light fixture 32 · Receptacle 22 …`.
+   Choosing a chip shows only that type's marks **and** list rows. `All` shows everything.
+4. **Marks switch** (button + key **M**) hides/shows all marks to see the bare drawing.
+   M does nothing while the user is typing in an input.
+5. **Mark ↔ row link.** Click a mark = select its row (list scrolls to it, jump box shows).
+   Click a row = its mark is highlighted. Hover a mark: tooltip with name, type, confidence, status.
+
+### New log actions (same columns as today)
+| action | item_id | old_value | new_value |
+|---|---|---|---|
+| `marks_toggled` | | | `on` / `off` |
+| `type_filter_changed` | | previous type or `all` | new type or `all` |
+| `mark_clicked` | row id | | |
+
+One event per user action: a mark click logs `mark_clicked` only (not also `row_clicked`).
+
+## Architecture — how to build it
+Today `src/App.jsx` is ~930 lines and holds the whole review screen. Do **not** refactor it.
+Add the feature as small, separate pieces and touch `App.jsx` only to wire them in.
+
+**1. Logic first, separated from the screen (pure JS, no React).**
+- `src/lib/geometry.js` — add one function `ringCircle({ x, y, zoom, diameter, minScreen })`
+  → `{ cx, cy, r }` in screen px. All mark positions use it (hard rule 4).
+- `src/lib/marks.js` (new) — pure functions only:
+  - `buildMarks({ items, statuses, additions, edits, byName })` → one mark per row and per addition:
+    `{ id, x, y, kind: 'row' | 'added', name, type, confidence, status: 'undecided' | 'accepted' | 'rejected' }`.
+    Use the existing `displayItem` from `edits.js` so renamed rows show their new name and type.
+  - `typeCounts(marks)` → `[{ type, count }]` for the chips.
+  - `filterByType(list, type)` → used for BOTH marks and list rows (one rule, two places).
+  - `drawOrder(marks)` → rejected first, then undecided, accepted, added (selected box is drawn last by App).
+- `src/config/markStyles.js` (new) — the type → colour table and the status → line style/icon table.
+  All visual constants live here, nowhere else.
+
+**2. Small components, presentational only.** Create `src/components/`:
+- `MarksLayer.jsx` — receives `marks`, `zoom`, `selectedId`, `onMarkClick`; draws ONE `<svg>` overlay
+  inside `ZoomableImage`'s `children(zoom)`. The svg has `pointer-events: none`; only rings take clicks.
+  Wrap in `React.memo`; key each mark by its row id.
+- `TypeChips.jsx` — receives `counts`, `value`, `onChange`. No logging inside.
+- `MarksToggle.jsx` (or a button in the existing toolbar) — receives `on`, `onToggle`.
+
+**3. One source of truth.** Marks are **derived** from the state that already exists
+(`items`, `statuses`, `additions`, `edits`, `selectedId`) with `useMemo`. Do not copy that state.
+Only two new pieces of state in the review screen: `marksOn` (boolean, default true) and
+`typeFilter` (`'all'` or a type).
+
+**4. Side effects in one place.** Components never call `logEvent`. App.jsx handlers do:
+toggle → `marks_toggled`; chip → `type_filter_changed`; mark click → `mark_clicked` + the same
+select-and-jump code the row click uses (extract that into one `selectRow(id, source)` function so
+row click and mark click share it; `source` decides which event is logged).
+
+**5. Flag at the edges.** Read `FEATURES.allMarks` once in App.jsx. When false: no layer, no chips,
+no toggle, no M key, today's dots for additions. Nothing else changes.
+
+**6. Design quality.**
+- Palette: 9 colours that are distinct from each other and from the blue jump box, each with contrast
+  ≥ 3:1 on white. Propose it in your plan (colour-blind safe, e.g. based on Okabe–Ito).
+- Every ring has an `aria-label` ("E2-NL, Light fixture, accepted"). Chips are real buttons.
+- Keep the study tool's calm look. Must work at 1366×768 and 1920×1080.
+- Performance: up to ~70 marks per sheet; panning and zooming must stay smooth at 200%.
+
+## Tests (plain Node, like the existing ones)
+New file `scripts/marks.test.js`, added to the `npm test` chain in `package.json`:
+- `ringCircle`: the centre lands on the item's x,y at zoom 0.5, 1 and 2 (±0.5 px); r never below 8 screen px.
+- `buildMarks`: one mark per row and per addition; a rejected row keeps a mark with status `rejected`;
+  a renamed row shows its new name and type.
+- `typeCounts` adds up to the number of rows; `filterByType('all')` returns everything.
+- Guard: no file in `src/` mentions `answer-key`, `baseline/` or `handoff` (hard rule 3).
+
+## Phases — I trigger one at a time. Before each: a plan (max 8 bullets), then wait for my OK.
+- **Phase 0 — Check the ground.** Confirm: on branch `product`; flags exist in `features.json`;
+  the logger writes to `product_event_log`. If any is missing, stop and tell me (Step 0 is not done).
+- **Phase 1 — Read and map (no code).** Tell me where `items`, `statuses`, `additions`, `edits`,
+  `selectedId` live; how the jump box is drawn in `children(zoom)`; how a row click selects and jumps.
+  Then give me the file plan and your colour palette.
+- **Phase 2 — Logic + tests.** `ringCircle`, `marks.js`, `markStyles.js`, `scripts/marks.test.js`.
+  Show me the `npm test` output.
+- **Phase 3 — Draw the marks.** `MarksLayer`, wired into `ZoomableImage`. Display only, no clicks yet.
+- **Phase 4 — Mark ↔ row link.** `selectRow(id, source)`, mark click, hover tooltip, `mark_clicked`.
+- **Phase 5 — Type chips.** Filter marks and rows together; `type_filter_changed`.
+- **Phase 6 — Marks switch + M key.** `marks_toggled`.
+- **Phase 7 — Quality check** (see Done when). Then I confirm, you commit, turn `allMarks` ON.
+
+## Done when
+- On practice and all six sheets, every ring sits on its symbol at Fit width, 100% and 200%.
+- Symbols with no ring are exactly the ones with no row (check sheet 1 with me).
+- Chips filter marks and rows together; counts are right; M and the switch work.
+- Mark → row and row → mark both work; each action logs exactly one event.
+- `allMarks: false` → the app looks and logs like `study-v1`.
+- `npm test` passes, including the new tests.
+
+## Not in this feature (later steps — do not build)
+Zones and progress by zone · quick add · finish panel · count check · anything in `docs/product/PLAN.md` LATER.
 
 ## Tech
-- React + Vite, Supabase (table `event_log`), Vercel. Repo stays PRIVATE.
-- Row Level Security: the anon key may INSERT into `event_log` only
-  (no SELECT, UPDATE or DELETE).
-- `main` is the live site: every push to main redeploys production.
-  Work on `v0.3` only (steps 8–14). Never commit to `v0.2`. Never push `main`.
-
----
-
-## What exists (on v0.2)
-Start screen (participant A or B, session label; practice first, then
-A = 1→6, B = 6→1) → review screen → confirm dialog → between sheets → end.
-Review screen: drawing on the left in a scrollable box at NATIVE size, full
-list on the right (name, type, confidence %, unit price, accept / reject /
-edit), Add missing item (click drawing, pick type then name, dot + a row in
-"Your Additions"), live bid total in €.
-Click a row: the drawing scrolls to that item and boxes it (Hard rule 3).
-Logging: localStorage queue, retried until Supabase confirms; the UI never
-waits on the network; events without participant or session label are
-quarantined, never sent, never deleted.
-Scoring: `scripts/score.js` on a CSV export of `event_log`.
-Validation: `npm run validate` (exits 1 only because practice is missing).
-
-### The problem v0.3 fixes
-Today each sheet shows at native size, so each one looks different: sheet 1
-fits, sheet 3 (2019 px wide) forces sideways scrolling, sheet 6 is tall.
-This looks unprofessional. There is also no legend, so the participant
-cannot check what a symbol means.
-
----
-
-## CURRENT SCOPE: v0.3 — viewer and legend
-
-### The two goals
-1. Every drawing fits the width of its pane when it opens, the same way for
-   all sheets, and the participant can zoom in and out and pan, like a
-   professional takeoff tool (reference: BuildVision / similar tools — a
-   bottom toolbar with  −  [ 92% ]  +  and a "Fit width" button).
-2. One combined legend image, shown in a panel BELOW the drawing, so the
-   participant can look up a symbol while reading the drawing.
-
-### Decisions already made
-- Zoom % means: 100% = one image pixel per screen pixel. The toolbar shows
-  the real %, so "fit width" reads e.g. 52% on sheet 3 and 95% on sheet 1.
-- Every sheet opens at the START ZOOM: drawing 80%, legend 71%, or FIT
-  WIDTH (zoom = pane inner width / image naturalWidth) if that is
-  narrower. No horizontal scrollbar at the start. A tall sheet (6) scrolls
-  vertically. That is normal. The Fit width button always fits to width.
-- Zoom range 25% to 400%. Buttons step by ×1.25. Ctrl + wheel (and trackpad
-  pinch) zooms around the mouse pointer. Plain wheel scrolls.
-- Pan: scrollbars, plus click-and-drag on the drawing (grab cursor). In
-  Add-missing mode a click places the item instead of panning.
-- Rendering: the <img> gets width = naturalWidth × zoom. Do NOT use a CSS
-  transform on the scroll container (it breaks scroll sizes and click math).
-  Boxes and dots are placed at (x × zoom, y × zoom) and resize with zoom.
-- Window resize: if the participant has not zoomed yet, re-apply the start
-  zoom rule (after Fit width: refit to width); once they have zoomed, keep
-  their zoom.
-- Opening a new sheet always resets to the start zoom (Hard rule 8).
-- Click-to-jump keeps the current zoom and centres the symbol in the pane.
-- One reusable component (`ZoomableImage`) is used for BOTH the drawing and
-  the legend. Same toolbar, same behaviour. Only the drawing allows
-  click-to-jump boxes, dots and Add missing.
-- Legend panel: under the drawing, in the left column, open by default,
-  collapsible with one header button ("Legend ▾"). The drawing keeps most
-  of the height (legend about one third when open).
-- The legend is one image, the same for all sheets. It is built once by a
-  local script and shipped as `public/legend.png`.
-- `zoom` flag is now ON (decided).
-
-### Build order (I trigger one step at a time)
-
-**Step 8 — Zoomable viewer for the drawing.**
-- Build `ZoomableImage` and use it for the drawing pane.
-- Fit width on open, toolbar ( − , %, + , Fit width ), ctrl+wheel zoom
-  around the pointer, drag to pan, refit on resize until first zoom.
-- Done when: all six sheets open filling the pane width with no sideways
-  scrollbar, at 1366×768 and 1920×1080 window sizes; zoom in/out and
-  Fit width work on every sheet.
-
-**Step 9 — Click-to-jump and Add missing at any zoom.**
-- One shared function converts screen ↔ image pixels (Hard rule 7).
-- Done when, on sheets 3 and 6, at Fit width, 100% and 200%:
-  - clicking any row centres and boxes the right symbol;
-  - an Add missing placed on a known symbol logs x,y within 3 px of that
-    symbol's baseline x,y.
-  Write a small automated test for the conversion function too.
-
-**Step 10 — Log zoom and pan.**
-- `zoom_changed`: old_value and new_value = zoom % (integer), plus how
-  (button, wheel, fit). One event per change; a wheel gesture logs ONCE
-  when it ends (debounce ~300 ms), not once per wheel tick.
-- `panned`: one event per drag or scroll gesture when it ends; x,y = the
-  centre of the visible area in image pixels.
-- Done when: each gesture produces exactly one event in the log.
-
-**Step 11 — Build the combined legend image (local script).**
-- I put the two legend screenshots in `handoff/legend/`
-  (`legend-1.webp` = lighting/equipment, `legend-2.webp` = ELECTRICAL LEGEND).
-- Script `scripts/build-legend` crops each one, then stacks them
-  vertically into ONE image: ELECTRICAL LEGEND on top, the other below,
-  same width, white background, a thin gap between.
-- Crops must remove: the dark bar at the top, the window frame lines, and
-  the "Activate Windows" watermark text at the right edge. Never resize
-  the content. If a crop would cut a symbol or a description, stop and
-  tell me.
-- Output `public/legend.png` (lossless PNG).
-- Done when: I open `public/legend.png` and approve it by eye.
-
-**Step 12 — Legend panel below the drawing.**
-- Uses `ZoomableImage` with `public/legend.png`: fit width, zoom, scroll.
-- Open by default, collapsible. No boxes, no dots, no Add missing on it.
-- Log `legend_toggled` with new_value `open` or `closed`. Legend zoom and
-  scroll are NOT logged.
-- Done when: on a 1366×768 window the drawing still gets about two thirds
-  of the left column with the legend open, and the full drawing height
-  with it closed.
-
-**Step 13 — Re-test end to end.**
-- Same test as before on sheet 1, but zoom in and out during the session.
-- Done when: CSV exported, `score.js` scores it correctly, the zoom /
-  pan / legend events are in the export, and `npm run validate` passes
-  every check except the missing practice sheet.
-
-**Step 14 — Practice sheet.**
-- I supply in `handoff/`: one PNG (same drawing scale as the six sheets)
-  and its list in the same CSV format as `handoff/baseline_lists/sheetN.items.csv`,
-  one row per physical symbol, every name already in `handoff/catalog.csv`,
-  every x,y in original image pixels. I tell you the file names and the count.
-- Copy the PNG byte for byte to `public/sheets/practice.png`. Import the
-  list with the same checks as step 1.
-- No planted errors, no answer key. Same confidence rule and same row look
-  as sheets 1–6. Events logged with `sheet = practice`, never scored.
-- Done when: `npm run validate` exits 0.
-
----
-
-## The sheets
-| sheet | items | image (px) |
-|---|---|---|
-| 1 | 52 | 1100 × 433 |
-| 2 | 45 | 1100 × 542 |
-| 3 | 55 | 2019 × 719 |
-| 4 | 54 | 1100 × 683 |
-| 5 | 59 | 1302 × 706 |
-| 6 | 47 | 1100 × 1148 |
-
-Images are never resized or re-encoded. Fitting is done on screen only.
-
-## Item model (from v0.2, unchanged)
-- NO rooms. One row = one physical symbol. Never "type ×N".
-- NAME = the tag printed next to the symbol (E2, D8, H), else the legend
-  name. TYPE = one of nine families: Light fixture, Track light head,
-  Exit sign, Ceiling fan, Receptacle, Switch, Sensor, Junction box,
-  Panelboard. Each name belongs to one type. Price is set per name.
-- The item lists are final.
-
-## Data layout
-```
-handoff/                        images, lists, catalog, legend. Source only. Never shipped.
-handoff/legend/legend-1.webp, legend-2.webp
-public/legend.png               built by scripts/build-legend
-public/sheets/practice.json, practice.png
-public/sheets/sheet1.json ... sheet6.json, sheet1.png ... sheet6.png
-    { "id", "name", "image", "items": [
-        { "id", "name", "type", "x", "y", "confidence", "unit_price" } ] }
-src/config/catalog.json         [ { "name", "type", "unit_price" } ]
-src/config/features.json        feature flags (see below)
-baseline/sheetN.baseline.json   # NOT in public/ or src/. Full truth.
-answer-key/sheetN.key.json      # NOT in public/ or src/.
-    { "manipulations": [ { "id", "direction": "UNDER"|"OVER",
-                           "x", "y", "cost", "pair_id" } ] }
-scoring.config.json             RADIUS = 30, locked
-```
-
-## Logging
-Table `event_log`: `id, session_label, participant, sheet, action, item_id,
-x, y, old_value, new_value, client_ts, server_ts`.
-
-Actions: `session_started, sheet_opened, row_clicked, accepted, rejected,
-edited, add_missing, add_removed, submitted, confirmed, cancelled,
-zoom_changed, panned, legend_toggled`.
-Flag-gated: `session_resumed, session_discarded, analysis_started,
-analysis_completed`.
-Each action logs exactly once. Added items get ids `ADD-<sheet>-<n>`, never
-reused. A row's status can be changed again; every change logs `old_value`
-and `new_value`. All x,y in image pixels.
-
-## Scoring (`scripts/score.js`, run locally) — unchanged
-- OVER caught = the phantom's final state is rejected. A phantom that was
-  edited but not rejected is NOT caught.
-- UNDER caught = an `add_missing` (not later removed) within RADIUS image
-  pixels of the deleted item's x,y. One add matches at most one deletion.
-  The name chosen for the added item does not matter.
-- Also reported: final confirmed bid, real items rejected, real items edited,
-  adds matching no deletion. Exact duplicate rows are dropped and counted.
-- Zoom, pan and legend events are never scored; they are kept for analysis.
-- Output: one row per manipulation (participant, session, sheet, id,
-  direction, pair_id, cost, caught).
-
-## Feature flags (`src/config/features.json`)
-| Flag | Study setting |
-|---|---|
-| `clickToJump` | ON (decided) |
-| `zoom` | ON (decided) |
-| `resume` | undecided |
-| `analyseAnimation` | undecided |
-
-## Decide BEFORE the first real session
-- `resume`, `analyseAnimation`: on or off.
-- Supervisor sign-off: the design, fit-width + zoom viewer, legend panel,
-  track heads as rows, and how the lists were verified.
-- Freeze: point Vercel production at a frozen study branch.
-- Clear test rows from `event_log`.
-
-## DEFERRED — do NOT build until I explicitly ask
-- Admin page. (It would put the answer key online; scoring stays local.)
-- Any redesign beyond v0.3.
+React + Vite, Supabase, Vercel (product = Vercel preview of branch `product`).
+Key files: `src/App.jsx`, `src/ZoomableImage.jsx` (overlays via `children(zoom)`), `src/lib/geometry.js`,
+`src/lib/edits.js`, `src/lib/logger.js`, `src/config/catalog.json`, `src/config/features.json`.
+Tests: plain Node scripts in `scripts/*.test.js`, run with `npm test`.
 
 ## How to work with me
-- Build ONE step at a time. Do only the step I ask for.
-- Before writing code for a step, propose a short plan and wait for approval.
-- After a step works and I confirm, commit on `v0.3` with a clear message.
-- Show me any change to this file before making it.
-- Keep it simple. This is a study instrument, not a commercial product.
-- If something conflicts with a Hard rule, stop and tell me.
+- One phase at a time. Plan first, wait for my OK. Build only that phase.
+- No extra features, no refactors I did not ask for.
+- When a phase is done: run `npm test`, tell me in simple words what changed, list the files,
+  and tell me exactly what to click to check it.
+- Commit on `product` only after I confirm. Show me any change to this file before making it.

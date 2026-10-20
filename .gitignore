@@ -31,3 +31,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local research material (never commit)
+transription&Results/
+design-refs/
+.claude/
+answer-key/answers-images/
