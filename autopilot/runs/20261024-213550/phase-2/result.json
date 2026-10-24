@@ -1,0 +1,17 @@
+{
+  "phase": "2",
+  "title": "Logic + tests",
+  "sessionId": "d6954782-82d7-459c-b426-5ff0bc698274",
+  "planRounds": 0,
+  "diffRounds": 0,
+  "planFile": "autopilot/runs/20261024-213550/phase-2/plan-1.md",
+  "files": [
+    "package.json",
+    "src/App.jsx",
+    "src/lib/geometry.js",
+    "scripts/marks.test.js",
+    "src/config/markStyles.js",
+    "src/lib/marks.js"
+  ],
+  "report": "## Changed\n- `src/lib/geometry.js`: added `ringCircle`, which works out where a mark's ring sits on screen and how big it is. It is 24 image px across and never smaller than 16 screen px.\n- `src/lib/marks.js` (new): builds one mark per row and one per addition, and has helpers for type counts, the type filter and the drawing order. A renamed row's mark shows its new name and type.\n- `src/config/markStyles.js` (new): the approved colour for each of the 9 types, the colours for additions and rejected rows, the ring sizes, and the line style and icon for each status.\n- `scripts/marks.test.js` (new): 14 tests covering everything listed under Tests in CLAUDE.md, plus a few extra checks. One of them confirms that nothing in `src/` mentions `answer-key`, `baseline/` or `handoff`.\n- `package.json`: the new test file now runs at the end of `npm test`.\n- `src/App.jsx`: I reworded the comment at line 34 so it no longer says \"handoff\". No code changed.\n\n`npm test` passes, including the 14 new tests, and `npm run build` passes. `allMarks` is still `false`.\n\n## What to click\nThis phase adds no screen changes. Turning `allMarks` on in `src/config/features.json` would show nothing new yet, because the marks are only drawn from Phase 3.\n\n1. Run `npm test` in the project folder. The end of the output should show `marks: 14 passed` with no FAIL lines.\n2. Run `npm run dev` and open the app. Go through the practice sheet and one real sheet, and check that it looks and behaves exactly as before."
+}

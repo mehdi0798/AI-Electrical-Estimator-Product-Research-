@@ -73,6 +73,15 @@ export function jumpBoxRect({ x, y, zoom, size, minScreen = 0, naturalWidth, nat
   return { left: tl.left, top: tl.top, width: br.left - tl.left, height: br.top - tl.top }
 }
 
+// A mark ring (allMarks), in screen px inside the drawn image: a circle of
+// `diameter` image px centred on (x, y), so it scales with zoom, but never
+// smaller than `minScreen` px across on screen. Not clipped to the image.
+export function ringCircle({ x, y, zoom, diameter, minScreen = 0 }) {
+  const c = imageToScreen({ x, y, zoom })
+  const d = Math.max(imageToScreen({ x: diameter, y: 0, zoom }).left, minScreen)
+  return { cx: c.left, cy: c.top, r: d / 2 }
+}
+
 // True if the scroll position is (within `tol` px) at a target the app scrolled
 // to itself. Used to tell programmatic scrolls (zoom re-centre, jump) apart from
 // participant pans, so only real pans are logged.

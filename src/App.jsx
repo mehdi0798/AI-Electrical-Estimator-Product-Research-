@@ -31,7 +31,7 @@ const euro = (n) =>
 
 // Catalog lookups for the Type -> Name picker (Edit and Add dialogs). Each name
 // has exactly one type and one unit price (src/config/catalog.json, built from
-// handoff/catalog.csv). Nothing is hardcoded here.
+// the study's catalog CSV, built offline). Nothing is hardcoded here.
 const CAT = catalogIndex(CATALOG)
 
 // Start zoom when a sheet opens (same for every participant, Hard rule 8): the

@@ -1,0 +1,28 @@
+- **`src/lib/geometry.js`: add `ringCircle({ x, y, zoom, diameter, minScreen })`.** It returns `{ cx, cy, r }` in screen px. The centre comes from the existing `imageToScreen`, so there is no new ad-hoc maths (hard rule 4). The radius is `max(diameter × zoom, minScreen) / 2`. Nothing else in the file changes.
+- **New `src/lib/marks.js`: `buildMarks({ items, statuses, additions, edits, byName })`.** This is pure JS with no React. It makes one mark per sheet row, built through the existing `displayItem` from `edits.js`, so a renamed row shows its new name and type. Each row mark is `{ id, x, y, kind: 'row', name, type, confidence, status }`. Status is `'accepted'` or `'rejected'` from `statuses[id]`, and `'undecided'` when there is no entry. It also makes one mark per addition: `{ kind: 'added', confidence: null, status: null }` (Phase 1 decision 6). Marks come only from the items and additions passed in, never from any other source (hard rule 3).
+- **In the same file: `typeCounts(marks)`, `filterByType(list, type)` and `drawOrder(marks)`.**
+  - `typeCounts` returns `[{ type, count }]`, counting row marks only, in first-seen order.
+  - `filterByType` returns the whole list for `'all'` and otherwise keeps only that type. It works on both marks and list rows because both have `.type`.
+  - `drawOrder` returns a new array: rejected, then undecided, then accepted, then added. The sort is stable and does not change its input.
+- **New `src/config/markStyles.js`: every visual constant for the marks.**
+  - `TYPE_COLORS`: the 9 approved hex colours, keyed by the type names in `catalog.json`.
+  - `ADDED_COLOR = '#344054'`, `REJECTED_COLOR = '#667085'`, `RING_DIAMETER = 24` (image px) and `RING_MIN_SCREEN = 16` (screen px).
+  - `STATUS_STYLES`: line width, dash pattern and icon for each status: undecided = thin solid, no icon; accepted = thicker solid + ✓; rejected = grey dashed + ×; added = diamond.
+  - This is plain data only.
+- **`src/App.jsx`: change the comment at line 34 only.** "built from handoff/catalog.csv" becomes "built offline from the study's catalog CSV", so no file in `src/` mentions `handoff`. No code changes.
+- **New `scripts/marks.test.js`: plain Node tests, using the same `test()` helper style as `app-lib.test.js`.**
+  - **`ringCircle`:**
+    - At zoom 0.5, 1 and 2, the centre lands on the item's x,y converted to screen px, within ±0.5 px.
+    - At zoom 0.25, 0.5, 1, 2 and 4, r is never below 8 screen px.
+  - **`buildMarks`:**
+    - There is exactly one mark per row and one per addition.
+    - A rejected row keeps its mark, with status `rejected`.
+    - Accepted and undecided rows get the right status.
+    - A renamed row (through `edits` and `catalogIndex(CATALOG).byName`) shows the new name and type.
+  - **`typeCounts`:** the counts add up to the number of rows.
+  - **`filterByType`:** `'all'` returns everything, and a single type returns only that type.
+  - **`drawOrder`:** checks the order rejected → undecided → accepted → added.
+  - **`markStyles`:** every catalog type has a colour.
+  - **Guard (hard rule 3):** walk `src/` recursively and fail if any file contains `answer-key`, `baseline/` or `handoff`.
+- **`package.json`: add `&& node scripts/marks.test.js` to the end of the `test` chain.** No other change.
+- **Check: run `npm test` and `npm run build`.** Both must pass. `allMarks` stays `false`, and nothing outside the 6 allowed files is touched.
