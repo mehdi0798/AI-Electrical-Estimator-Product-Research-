@@ -1,0 +1,1 @@
+{"verdict":"CHANGES","reasons":["Step 6 puts active and inactive chip colours in App.css, contrary to Phase 1 decision 8 and the architecture requirement that visual constants live in markStyles.js. Define chip colours and visual constants in src/config/markStyles.js; keep App.css for layout."]}

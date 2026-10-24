@@ -8,7 +8,8 @@ import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './
 import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
 import ZoomableImage from './ZoomableImage'
 import MarksLayer from './components/MarksLayer'
-import { buildMarks } from './lib/marks'
+import TypeChips from './components/TypeChips'
+import { buildMarks, filterByType, typeCounts } from './lib/marks'
 import {
   clearSession,
   loadSession,
@@ -347,6 +348,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const [statuses, setStatuses] = useState(() => savedSheet?.statuses ?? {})
   // Row highlight — visual only in v0.1 (does nothing on the drawing).
   const [selectedId, setSelectedId] = useState(null)
+  // features.allMarks: the type chip chosen ('all' or a type); filters marks and
+  // list rows together. Stays 'all' when the flag is off.
+  const [typeFilter, setTypeFilter] = useState('all')
 
   // --- Add missing item (step 3) ---
   // Placement mode and normal row-click/highlight are MUTUALLY EXCLUSIVE:
@@ -538,6 +542,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
         : [],
     [sheet, statuses, additions, edits],
   )
+  const counts = useMemo(() => typeCounts(marks), [marks])
+  const shownMarks = useMemo(() => filterByType(marks, typeFilter), [marks, typeFilter])
   // List rows by id, so a mark click can scroll its row into view.
   const rowRefs = useRef(new Map())
   // Stable mark-click handler for the memoised MarksLayer; it calls the latest
@@ -634,6 +640,16 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   }
   selectRowRef.current = selectRow
 
+  // features.allMarks: one type_filter_changed per chip change; the same chip
+  // again logs nothing. One filter rule for marks and list rows.
+  const changeTypeFilter = (next) => {
+    if (next === typeFilter) return
+    logEvent({ action: 'type_filter_changed', old_value: typeFilter, new_value: next })
+    setTypeFilter(next)
+  }
+  const shownItems = filterByType(items, typeFilter)
+  const shownAdditions = filterByType(additions, typeFilter)
+
   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
   // with features.clickToJump. Derived from selectedId, so there can never be two.
   // It scales with zoom (jumpBoxPx image px) but is never under 24 px on screen.
@@ -687,6 +703,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
         {/* Left: drawing, opened at fit width; zoom, pan (ZoomableImage, step 8);
             legend panel below it (step 12) */}
         <section className="drawing-pane">
+          {FEATURES.allMarks && analysed && (
+            <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
+          )}
           <ZoomableImage
             ref={viewerRef}
             imgRef={imgRef}
@@ -725,7 +744,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                   {FEATURES.allMarks ? (
                     analysed && size && (
                       <MarksLayer
-                        marks={marks}
+                        marks={shownMarks}
                         zoom={zoom}
                         width={size.left}
                         height={size.top}
@@ -788,7 +807,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             <span className="col-actions">Review</span>
           </div>
           <ul className="item-list">
-            {items.map((item) => {
+            {shownItems.map((item) => {
               const status = statuses[item.id]
               const isSelected = selectedId === item.id
               return (
@@ -865,11 +884,11 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           </ul>
 
           {/* Your Additions — appended below the ranked list, never sorted in. */}
-          {additions.length > 0 && (
+          {shownAdditions.length > 0 && (
             <div className="additions">
               <div className="additions-header">Your Additions</div>
               <ul className="item-list additions-list">
-                {additions.map((a) => (
+                {shownAdditions.map((a) => (
                   <li className="item-row addition-row" key={a.id}>
                     <div className="item-main">
                       <span className="item-name">{a.name}</span>

@@ -34,14 +34,15 @@ export function buildMarks({ items, statuses, additions, edits, byName }) {
   return [...rows, ...added]
 }
 
-// Counts per type for the chips, rows only, in first-seen order.
+// Counts per type for the chips, rows only, highest count first (ties keep
+// first-seen order).
 export function typeCounts(marks) {
   const counts = new Map()
   for (const m of marks) {
     if (m.kind !== 'row') continue
     counts.set(m.type, (counts.get(m.type) ?? 0) + 1)
   }
-  return [...counts].map(([type, count]) => ({ type, count }))
+  return [...counts].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
 }
 
 // The one type filter, for both marks and list rows.

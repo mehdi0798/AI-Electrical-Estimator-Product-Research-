@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
 import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
 import { catalogIndex } from '../src/lib/edits.js'
-import { RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
+import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
 
 let passed = 0
@@ -114,6 +114,34 @@ test('typeCounts adds up to the number of rows', () => {
   ])
 })
 
+test('typeCounts: highest count first, ties keep first-seen order, additions not counted', () => {
+  const rows = [
+    { id: 'a', kind: 'row', type: 'Sensor' },
+    { id: 'b', kind: 'row', type: 'Receptacle' },
+    { id: 'c', kind: 'row', type: 'Light fixture' },
+    { id: 'd', kind: 'row', type: 'Light fixture' },
+    { id: 'e', kind: 'added', type: 'Receptacle' },
+    { id: 'f', kind: 'added', type: 'Receptacle' },
+  ]
+  assert.deepEqual(typeCounts(rows), [
+    { type: 'Light fixture', count: 2 },
+    { type: 'Sensor', count: 1 },
+    { type: 'Receptacle', count: 1 },
+  ])
+})
+
+test('typeCounts still adds up to the rows after a rename changes a type', () => {
+  const renamed = buildMarks({ items, statuses, additions, edits: { 'S1-1': 'Duplex receptacle' }, byName })
+  const counts = typeCounts(renamed)
+  assert.equal(counts.reduce((s, c) => s + c.count, 0), items.length)
+  assert.deepEqual(counts.find((c) => c.type === 'Receptacle'), { type: 'Receptacle', count: 2 })
+})
+
+test('filterByType with a type not on the sheet returns [] for marks and rows', () => {
+  assert.deepEqual(filterByType(marks, 'Ceiling fan'), [])
+  assert.deepEqual(filterByType(items, 'Ceiling fan'), [])
+})
+
 test("filterByType('all') returns everything", () => {
   assert.equal(filterByType(marks, 'all'), marks)
   assert.equal(filterByType(items, 'all'), items)
@@ -183,6 +211,13 @@ console.log('markStyles')
 
 test('every catalog type has a colour', () => {
   for (const type of catalogIndex(CATALOG).types) assert.ok(TYPE_COLORS[type], type)
+})
+
+test('CHIP_STYLE has every key the chips use', () => {
+  for (const state of ['rest', 'active']) {
+    for (const key of ['background', 'border', 'text']) assert.ok(CHIP_STYLE[state][key], `${state}.${key}`)
+  }
+  assert.ok(CHIP_STYLE.dotSize > 0)
 })
 
 console.log('guard (hard rule 3)')

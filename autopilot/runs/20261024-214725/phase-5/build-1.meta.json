@@ -1,0 +1,11 @@
+{
+  "exit": 0,
+  "timedOut": false,
+  "is_error": false,
+  "subtype": "success",
+  "session_id": "74fc1119-506a-4f40-970c-2653c3e02443",
+  "num_turns": 25,
+  "duration_ms": 79034,
+  "total_cost_usd": 0.8446104000000001,
+  "permission_denials": []
+}

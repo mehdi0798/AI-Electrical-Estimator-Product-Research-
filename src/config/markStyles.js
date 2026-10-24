@@ -45,3 +45,11 @@ export const STATUS_STYLES = {
   rejected: { strokeWidth: 1.5, dash: '4 3', icon: '×' },
   added: { strokeWidth: 1.5, dash: null, icon: 'diamond' },
 }
+
+// Type chips above the drawing: rest and active colours (text >= 4.5:1 on its
+// background), and the type dot's diameter (screen px). Dot colour = TYPE_COLORS.
+export const CHIP_STYLE = {
+  rest: { background: '#ffffff', border: '#d0d5dd', text: '#344054' },
+  active: { background: '#344054', border: '#344054', text: '#ffffff' },
+  dotSize: 8,
+}

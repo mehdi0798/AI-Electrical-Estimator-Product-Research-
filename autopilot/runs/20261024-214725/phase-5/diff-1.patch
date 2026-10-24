@@ -1,0 +1,291 @@
+diff --git a/scripts/marks.test.js b/scripts/marks.test.js
+index 41d9749..7195c3f 100644
+--- a/scripts/marks.test.js
++++ b/scripts/marks.test.js
+@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
+ import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
+ import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
+ import { catalogIndex } from '../src/lib/edits.js'
+-import { RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
++import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
+ import CATALOG from '../src/config/catalog.json' with { type: 'json' }
+ 
+ let passed = 0
+@@ -114,6 +114,34 @@ test('typeCounts adds up to the number of rows', () => {
+   ])
+ })
+ 
++test('typeCounts: highest count first, ties keep first-seen order, additions not counted', () => {
++  const rows = [
++    { id: 'a', kind: 'row', type: 'Sensor' },
++    { id: 'b', kind: 'row', type: 'Receptacle' },
++    { id: 'c', kind: 'row', type: 'Light fixture' },
++    { id: 'd', kind: 'row', type: 'Light fixture' },
++    { id: 'e', kind: 'added', type: 'Receptacle' },
++    { id: 'f', kind: 'added', type: 'Receptacle' },
++  ]
++  assert.deepEqual(typeCounts(rows), [
++    { type: 'Light fixture', count: 2 },
++    { type: 'Sensor', count: 1 },
++    { type: 'Receptacle', count: 1 },
++  ])
++})
++
++test('typeCounts still adds up to the rows after a rename changes a type', () => {
++  const renamed = buildMarks({ items, statuses, additions, edits: { 'S1-1': 'Duplex receptacle' }, byName })
++  const counts = typeCounts(renamed)
++  assert.equal(counts.reduce((s, c) => s + c.count, 0), items.length)
++  assert.deepEqual(counts.find((c) => c.type === 'Receptacle'), { type: 'Receptacle', count: 2 })
++})
++
++test('filterByType with a type not on the sheet returns [] for marks and rows', () => {
++  assert.deepEqual(filterByType(marks, 'Ceiling fan'), [])
++  assert.deepEqual(filterByType(items, 'Ceiling fan'), [])
++})
++
+ test("filterByType('all') returns everything", () => {
+   assert.equal(filterByType(marks, 'all'), marks)
+   assert.equal(filterByType(items, 'all'), items)
+@@ -185,6 +213,13 @@ test('every catalog type has a colour', () => {
+   for (const type of catalogIndex(CATALOG).types) assert.ok(TYPE_COLORS[type], type)
+ })
+ 
++test('CHIP_STYLE has every key the chips use', () => {
++  for (const state of ['rest', 'active']) {
++    for (const key of ['background', 'border', 'text']) assert.ok(CHIP_STYLE[state][key], `${state}.${key}`)
++  }
++  assert.ok(CHIP_STYLE.dotSize > 0)
++})
++
+ console.log('guard (hard rule 3)')
+ 
+ test('no file in src/ mentions answer-key, baseline/ or handoff', () => {
+diff --git a/src/App.css b/src/App.css
+index 475dcdf..e470d7d 100644
+--- a/src/App.css
++++ b/src/App.css
+@@ -323,6 +323,35 @@
+   cursor: default;
+ }
+ 
++/* Type chips above the drawing (features.allMarks). Layout only; colours in
++   src/config/markStyles.js. */
++.type-chips {
++  flex: 0 0 auto;
++  display: flex;
++  flex-wrap: wrap;
++  gap: var(--s1);
++}
++.type-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  padding: 2px 10px;
++  border: 1px solid;
++  border-radius: 999px;
++  font: inherit;
++  font-size: 12px;
++  line-height: 18px;
++  cursor: pointer;
++}
++.type-chip-dot {
++  flex: 0 0 auto;
++  border-radius: 50%;
++}
++.type-chip-count {
++  font-variant-numeric: tabular-nums;
++  font-weight: 600;
++}
++
+ /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
+ .jump-box {
+   position: absolute;
+diff --git a/src/App.jsx b/src/App.jsx
+index 9d4680a..5236071 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -8,7 +8,8 @@ import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './
+ import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
+ import ZoomableImage from './ZoomableImage'
+ import MarksLayer from './components/MarksLayer'
+-import { buildMarks } from './lib/marks'
++import TypeChips from './components/TypeChips'
++import { buildMarks, filterByType, typeCounts } from './lib/marks'
+ import {
+   clearSession,
+   loadSession,
+@@ -347,6 +348,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+   const [statuses, setStatuses] = useState(() => savedSheet?.statuses ?? {})
+   // Row highlight — visual only in v0.1 (does nothing on the drawing).
+   const [selectedId, setSelectedId] = useState(null)
++  // features.allMarks: the type chip chosen ('all' or a type); filters marks and
++  // list rows together. Stays 'all' when the flag is off.
++  const [typeFilter, setTypeFilter] = useState('all')
+ 
+   // --- Add missing item (step 3) ---
+   // Placement mode and normal row-click/highlight are MUTUALLY EXCLUSIVE:
+@@ -538,6 +542,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+         : [],
+     [sheet, statuses, additions, edits],
+   )
++  const counts = useMemo(() => typeCounts(marks), [marks])
++  const shownMarks = useMemo(() => filterByType(marks, typeFilter), [marks, typeFilter])
+   // List rows by id, so a mark click can scroll its row into view.
+   const rowRefs = useRef(new Map())
+   // Stable mark-click handler for the memoised MarksLayer; it calls the latest
+@@ -634,6 +640,16 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+   }
+   selectRowRef.current = selectRow
+ 
++  // features.allMarks: one type_filter_changed per chip change; the same chip
++  // again logs nothing. One filter rule for marks and list rows.
++  const changeTypeFilter = (next) => {
++    if (next === typeFilter) return
++    logEvent({ action: 'type_filter_changed', old_value: typeFilter, new_value: next })
++    setTypeFilter(next)
++  }
++  const shownItems = filterByType(items, typeFilter)
++  const shownAdditions = filterByType(additions, typeFilter)
++
+   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
+   // with features.clickToJump. Derived from selectedId, so there can never be two.
+   // It scales with zoom (jumpBoxPx image px) but is never under 24 px on screen.
+@@ -687,6 +703,9 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+         {/* Left: drawing, opened at fit width; zoom, pan (ZoomableImage, step 8);
+             legend panel below it (step 12) */}
+         <section className="drawing-pane">
++          {FEATURES.allMarks && analysed && (
++            <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
++          )}
+           <ZoomableImage
+             ref={viewerRef}
+             imgRef={imgRef}
+@@ -725,7 +744,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+                   {FEATURES.allMarks ? (
+                     analysed && size && (
+                       <MarksLayer
+-                        marks={marks}
++                        marks={shownMarks}
+                         zoom={zoom}
+                         width={size.left}
+                         height={size.top}
+@@ -788,7 +807,7 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+             <span className="col-actions">Review</span>
+           </div>
+           <ul className="item-list">
+-            {items.map((item) => {
++            {shownItems.map((item) => {
+               const status = statuses[item.id]
+               const isSelected = selectedId === item.id
+               return (
+@@ -865,11 +884,11 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+           </ul>
+ 
+           {/* Your Additions — appended below the ranked list, never sorted in. */}
+-          {additions.length > 0 && (
++          {shownAdditions.length > 0 && (
+             <div className="additions">
+               <div className="additions-header">Your Additions</div>
+               <ul className="item-list additions-list">
+-                {additions.map((a) => (
++                {shownAdditions.map((a) => (
+                   <li className="item-row addition-row" key={a.id}>
+                     <div className="item-main">
+                       <span className="item-name">{a.name}</span>
+diff --git a/src/config/markStyles.js b/src/config/markStyles.js
+index 78dc56c..598086f 100644
+--- a/src/config/markStyles.js
++++ b/src/config/markStyles.js
+@@ -45,3 +45,11 @@ export const STATUS_STYLES = {
+   rejected: { strokeWidth: 1.5, dash: '4 3', icon: '×' },
+   added: { strokeWidth: 1.5, dash: null, icon: 'diamond' },
+ }
++
++// Type chips above the drawing: rest and active colours (text >= 4.5:1 on its
++// background), and the type dot's diameter (screen px). Dot colour = TYPE_COLORS.
++export const CHIP_STYLE = {
++  rest: { background: '#ffffff', border: '#d0d5dd', text: '#344054' },
++  active: { background: '#344054', border: '#344054', text: '#ffffff' },
++  dotSize: 8,
++}
+diff --git a/src/lib/marks.js b/src/lib/marks.js
+index 2795d59..426d0db 100644
+--- a/src/lib/marks.js
++++ b/src/lib/marks.js
+@@ -34,14 +34,15 @@ export function buildMarks({ items, statuses, additions, edits, byName }) {
+   return [...rows, ...added]
+ }
+ 
+-// Counts per type for the chips, rows only, in first-seen order.
++// Counts per type for the chips, rows only, highest count first (ties keep
++// first-seen order).
+ export function typeCounts(marks) {
+   const counts = new Map()
+   for (const m of marks) {
+     if (m.kind !== 'row') continue
+     counts.set(m.type, (counts.get(m.type) ?? 0) + 1)
+   }
+-  return [...counts].map(([type, count]) => ({ type, count }))
++  return [...counts].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
+ }
+ 
+ // The one type filter, for both marks and list rows.
+diff --git a/src/components/TypeChips.jsx b/src/components/TypeChips.jsx
+new file mode 100644
+index 0000000..90f62f6
+--- /dev/null
++++ b/src/components/TypeChips.jsx
+@@ -0,0 +1,53 @@
++// All marks on (Feature 1, flag allMarks): one chip per type with its row count,
++// plus "All". Choosing a chip filters marks and list rows together (App.jsx).
++// Presentational only: no state, no logging. Colours from markStyles.js.
++
++import { memo } from 'react'
++import { CHIP_STYLE, REJECTED_COLOR, TYPE_COLORS } from '../config/markStyles'
++
++function Chip({ active, onClick, type, children }) {
++  const s = active ? CHIP_STYLE.active : CHIP_STYLE.rest
++  return (
++    <button
++      type="button"
++      className="type-chip"
++      aria-pressed={active}
++      onClick={onClick}
++      style={{ background: s.background, borderColor: s.border, color: s.text }}
++    >
++      {type && (
++        <span
++          className="type-chip-dot"
++          aria-hidden="true"
++          style={{
++            width: CHIP_STYLE.dotSize,
++            height: CHIP_STYLE.dotSize,
++            background: TYPE_COLORS[type] ?? REJECTED_COLOR,
++          }}
++        />
++      )}
++      {children}
++    </button>
++  )
++}
++
++function TypeChips({ counts, value, onChange }) {
++  // The active type stays visible at 0 (a rename can empty it).
++  const shown = value !== 'all' && !counts.some((c) => c.type === value)
++    ? [...counts, { type: value, count: 0 }]
++    : counts
++  return (
++    <div className="type-chips" role="group" aria-label="Filter by type">
++      <Chip active={value === 'all'} onClick={() => onChange('all')}>
++        All
++      </Chip>
++      {shown.map((c) => (
++        <Chip key={c.type} type={c.type} active={value === c.type} onClick={() => onChange(c.type)}>
++          {c.type} <span className="type-chip-count">{c.count}</span>
++        </Chip>
++      ))}
++    </div>
++  )
++}
++
++export default memo(TypeChips)
