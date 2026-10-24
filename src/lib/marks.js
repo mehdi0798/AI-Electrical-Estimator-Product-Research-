@@ -55,6 +55,13 @@ export function markLabel(m) {
   return `${m.name}, ${m.type}, ${m.kind === 'added' ? 'Added by you' : m.status}`
 }
 
+// Hover text of one mark: "E2 · Light fixture · 92% · accepted". An addition
+// has no confidence: "E2-NL · Light fixture · Added by you".
+export function markTooltip(m) {
+  if (m.kind === 'added') return `${m.name} · ${m.type} · Added by you`
+  return `${m.name} · ${m.type} · ${Math.round(m.confidence * 100)}% · ${m.status}`
+}
+
 // SVG polygon points for an addition's diamond, in screen px. The centre comes
 // from ringCircle (geometry.js); this only spreads the four corners around it.
 export function diamondPoints({ cx, cy, r }) {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import CATALOG from './config/catalog.json'
 import FEATURES from './config/features.json'
@@ -538,6 +538,12 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
         : [],
     [sheet, statuses, additions, edits],
   )
+  // List rows by id, so a mark click can scroll its row into view.
+  const rowRefs = useRef(new Map())
+  // Stable mark-click handler for the memoised MarksLayer; it calls the latest
+  // selectRow (assigned below, after the loading checks).
+  const selectRowRef = useRef(null)
+  const onMarkClick = useCallback((id) => selectRowRef.current?.(id, 'mark'), [])
 
   if (error) {
     return <div className="state error">Could not load sheet: {error}</div>
@@ -613,6 +619,20 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   // features.clickToJump: centre the clicked row's item in the drawing view, at
   // the current zoom (the viewer keeps whatever zoom the participant chose).
   const jumpTo = (item) => viewerRef.current?.centerOn(item.x, item.y)
+
+  // One select-and-jump for row click and mark click; `source` picks the ONE
+  // event logged ('row' → row_clicked, 'mark' → mark_clicked). Nothing while
+  // placing. A mark click also scrolls the list to its row.
+  const selectRow = (id, source) => {
+    if (placing) return
+    const item = items.find((it) => it.id === id)
+    if (!item) return
+    setSelectedId(id)
+    logEvent({ action: source === 'mark' ? 'mark_clicked' : 'row_clicked', item_id: id })
+    if (FEATURES.clickToJump) jumpTo(item)
+    if (source === 'mark') rowRefs.current.get(id)?.scrollIntoView({ block: 'nearest' })
+  }
+  selectRowRef.current = selectRow
 
   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
   // with features.clickToJump. Derived from selectedId, so there can never be two.
@@ -704,7 +724,15 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                       analysis reveals the list. Otherwise today's addition dots. */}
                   {FEATURES.allMarks ? (
                     analysed && size && (
-                      <MarksLayer marks={marks} zoom={zoom} width={size.left} height={size.top} />
+                      <MarksLayer
+                        marks={marks}
+                        zoom={zoom}
+                        width={size.left}
+                        height={size.top}
+                        selectedId={selectedId}
+                        onMarkClick={onMarkClick}
+                        interactive={!placing}
+                      />
                     )
                   ) : (
                     /* Dots ONLY for participant-added items (Hard rule 3). */
@@ -771,13 +799,12 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
                     (status === 'rejected' ? ' rejected' : '')
                   }
                   key={item.id}
-                  onClick={() => {
-                    // Suppress normal highlight while in placement mode.
-                    if (placing) return
-                    setSelectedId(item.id)
-                    logEvent({ action: 'row_clicked', item_id: item.id })
-                    if (FEATURES.clickToJump) jumpTo(item)
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(item.id, el)
+                    else rowRefs.current.delete(item.id)
                   }}
+                  // Suppress normal highlight while in placement mode (inside selectRow).
+                  onClick={() => selectRow(item.id, 'row')}
                 >
                   <div className="item-main">
                     <span className="item-name">{item.name}</span>

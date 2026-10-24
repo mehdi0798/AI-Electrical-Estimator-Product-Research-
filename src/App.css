@@ -315,6 +315,13 @@
   overflow: visible;
   pointer-events: none;
 }
+/* Only the band along a ring takes the pointer; additions are hover-only. */
+.marks-layer .mark-hit {
+  cursor: pointer;
+}
+.marks-layer .mark-hit.added {
+  cursor: default;
+}
 
 /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
 .jump-box {

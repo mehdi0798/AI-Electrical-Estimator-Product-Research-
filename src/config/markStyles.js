@@ -31,6 +31,13 @@ export const ICON_COLOR = '#101828'
 // Diamond for additions: half-diagonal = ring r x this factor.
 export const DIAMOND_FACTOR = 0.75
 
+// Invisible band along each ring / diamond that takes hover (and, for rows,
+// clicks): stroke width in screen px. The symbol inside stays click-through.
+export const HIT_WIDTH = 8
+
+// The selected row's mark: stroke and halo this much wider (screen px).
+export const SELECTED_EXTRA = 1.5
+
 // Line style and icon per status. dash = SVG stroke-dasharray (null = solid).
 export const STATUS_STYLES = {
   undecided: { strokeWidth: 1.5, dash: null, icon: null },

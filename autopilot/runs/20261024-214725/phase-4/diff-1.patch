@@ -1,0 +1,304 @@
+diff --git a/scripts/marks.test.js b/scripts/marks.test.js
+index 2dceb86..41d9749 100644
+--- a/scripts/marks.test.js
++++ b/scripts/marks.test.js
+@@ -6,7 +6,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
+ import { join } from 'node:path'
+ import { fileURLToPath } from 'node:url'
+ import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
+-import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, typeCounts } from '../src/lib/marks.js'
++import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
+ import { catalogIndex } from '../src/lib/edits.js'
+ import { RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
+ import CATALOG from '../src/config/catalog.json' with { type: 'json' }
+@@ -158,6 +158,27 @@ test('diamondPoints is centred on the ringCircle centre at zoom 0.5, 1 and 2', (
+   }
+ })
+ 
++console.log('markTooltip')
++
++test('markTooltip: accepted row shows name, type, confidence % and status', () => {
++  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-1')), 'E2 · Light fixture · 95% · accepted')
++})
++
++test('markTooltip: rejected and undecided rows', () => {
++  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-2')), 'Duplex receptacle · Receptacle · 80% · rejected')
++  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-4')), 'Occupancy sensor · Sensor · 40% · undecided')
++})
++
++test('markTooltip: a renamed row shows its new name and type', () => {
++  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-3')), 'Single pole wall switch · Switch · 60% · undecided')
++})
++
++test('markTooltip: an addition says Added by you, no %', () => {
++  const t = markTooltip(marks.find((m) => m.id === 'ADD-1'))
++  assert.equal(t, 'E2-NL · Light fixture · Added by you')
++  assert.ok(!t.includes('%'))
++})
++
+ console.log('markStyles')
+ 
+ test('every catalog type has a colour', () => {
+diff --git a/src/App.css b/src/App.css
+index 54de3ee..475dcdf 100644
+--- a/src/App.css
++++ b/src/App.css
+@@ -315,6 +315,13 @@
+   overflow: visible;
+   pointer-events: none;
+ }
++/* Only the band along a ring takes the pointer; additions are hover-only. */
++.marks-layer .mark-hit {
++  cursor: pointer;
++}
++.marks-layer .mark-hit.added {
++  cursor: default;
++}
+ 
+ /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
+ .jump-box {
+diff --git a/src/App.jsx b/src/App.jsx
+index 66752d0..9d4680a 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1,4 +1,4 @@
+-import { useEffect, useMemo, useRef, useState } from 'react'
++import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+ import './App.css'
+ import CATALOG from './config/catalog.json'
+ import FEATURES from './config/features.json'
+@@ -538,6 +538,12 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+         : [],
+     [sheet, statuses, additions, edits],
+   )
++  // List rows by id, so a mark click can scroll its row into view.
++  const rowRefs = useRef(new Map())
++  // Stable mark-click handler for the memoised MarksLayer; it calls the latest
++  // selectRow (assigned below, after the loading checks).
++  const selectRowRef = useRef(null)
++  const onMarkClick = useCallback((id) => selectRowRef.current?.(id, 'mark'), [])
+ 
+   if (error) {
+     return <div className="state error">Could not load sheet: {error}</div>
+@@ -614,6 +620,20 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+   // the current zoom (the viewer keeps whatever zoom the participant chose).
+   const jumpTo = (item) => viewerRef.current?.centerOn(item.x, item.y)
+ 
++  // One select-and-jump for row click and mark click; `source` picks the ONE
++  // event logged ('row' → row_clicked, 'mark' → mark_clicked). Nothing while
++  // placing. A mark click also scrolls the list to its row.
++  const selectRow = (id, source) => {
++    if (placing) return
++    const item = items.find((it) => it.id === id)
++    if (!item) return
++    setSelectedId(id)
++    logEvent({ action: source === 'mark' ? 'mark_clicked' : 'row_clicked', item_id: id })
++    if (FEATURES.clickToJump) jumpTo(item)
++    if (source === 'mark') rowRefs.current.get(id)?.scrollIntoView({ block: 'nearest' })
++  }
++  selectRowRef.current = selectRow
++
+   // The ONE box on the drawing (Hard rule 3): only the selected row's item, only
+   // with features.clickToJump. Derived from selectedId, so there can never be two.
+   // It scales with zoom (jumpBoxPx image px) but is never under 24 px on screen.
+@@ -704,7 +724,15 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+                       analysis reveals the list. Otherwise today's addition dots. */}
+                   {FEATURES.allMarks ? (
+                     analysed && size && (
+-                      <MarksLayer marks={marks} zoom={zoom} width={size.left} height={size.top} />
++                      <MarksLayer
++                        marks={marks}
++                        zoom={zoom}
++                        width={size.left}
++                        height={size.top}
++                        selectedId={selectedId}
++                        onMarkClick={onMarkClick}
++                        interactive={!placing}
++                      />
+                     )
+                   ) : (
+                     /* Dots ONLY for participant-added items (Hard rule 3). */
+@@ -771,13 +799,12 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+                     (status === 'rejected' ? ' rejected' : '')
+                   }
+                   key={item.id}
+-                  onClick={() => {
+-                    // Suppress normal highlight while in placement mode.
+-                    if (placing) return
+-                    setSelectedId(item.id)
+-                    logEvent({ action: 'row_clicked', item_id: item.id })
+-                    if (FEATURES.clickToJump) jumpTo(item)
++                  ref={(el) => {
++                    if (el) rowRefs.current.set(item.id, el)
++                    else rowRefs.current.delete(item.id)
+                   }}
++                  // Suppress normal highlight while in placement mode (inside selectRow).
++                  onClick={() => selectRow(item.id, 'row')}
+                 >
+                   <div className="item-main">
+                     <span className="item-name">{item.name}</span>
+diff --git a/src/components/MarksLayer.jsx b/src/components/MarksLayer.jsx
+index 66e2756..7b32ed2 100644
+--- a/src/components/MarksLayer.jsx
++++ b/src/components/MarksLayer.jsx
+@@ -1,54 +1,74 @@
+ // All marks on (Feature 1, flag allMarks): one ring per sheet row and one
+ // diamond per addition, all at once, in ONE svg over the drawing. Presentational
+ // only: no state, no logging. Positions come from ringCircle (geometry.js).
++// The svg ignores the pointer; only an invisible band along each ring/diamond
++// takes hover (tooltip) and, for rows, clicks. No bands while not interactive
++// (placing), so every click reaches the drawing.
+ 
+ import { memo } from 'react'
+ import { ringCircle } from '../lib/geometry'
+-import { diamondPoints, drawOrder, markLabel } from '../lib/marks'
++import { diamondPoints, drawOrder, markLabel, markTooltip } from '../lib/marks'
+ import {
+   ADDED_COLOR,
+   DIAMOND_FACTOR,
+   HALO_COLOR,
+   HALO_EXTRA,
++  HIT_WIDTH,
+   ICON_COLOR,
+   ICON_SIZE,
+   REJECTED_COLOR,
+   RING_DIAMETER,
+   RING_MIN_SCREEN,
++  SELECTED_EXTRA,
+   STATUS_STYLES,
+   TYPE_COLORS,
+ } from '../config/markStyles'
+ 
+-function Mark({ mark, zoom }) {
++function Mark({ mark, zoom, selected, interactive, onMarkClick }) {
+   const c = ringCircle({ x: mark.x, y: mark.y, zoom, diameter: RING_DIAMETER, minScreen: RING_MIN_SCREEN })
+   const label = markLabel(mark)
++  const tip = <title>{markTooltip(mark)}</title>
+ 
+   if (mark.kind === 'added') {
+     const s = STATUS_STYLES.added
+     const points = diamondPoints({ cx: c.cx, cy: c.cy, r: c.r * DIAMOND_FACTOR })
+     return (
+       <g role="img" aria-label={label}>
++        {tip}
+         <polygon points={points} fill="none" stroke={HALO_COLOR} strokeWidth={s.strokeWidth + HALO_EXTRA} />
+         <polygon points={points} fill="none" stroke={ADDED_COLOR} strokeWidth={s.strokeWidth} />
++        {/* Hover only: no click handler, the click goes on to the drawing. */}
++        {interactive && (
++          <polygon
++            className="mark-hit added"
++            points={points}
++            fill="none"
++            stroke="transparent"
++            strokeWidth={HIT_WIDTH}
++            pointerEvents="stroke"
++          />
++        )}
+       </g>
+     )
+   }
+ 
+   const s = STATUS_STYLES[mark.status]
++  const width = s.strokeWidth + (selected ? SELECTED_EXTRA : 0)
+   const color = mark.status === 'rejected' ? REJECTED_COLOR : TYPE_COLORS[mark.type] ?? REJECTED_COLOR
+   // Icon at the ring's top-right (45°), outside the symbol.
+   const ix = c.cx + c.r * Math.SQRT1_2
+   const iy = c.cy - c.r * Math.SQRT1_2
+   return (
+     <g role="img" aria-label={label}>
+-      <circle cx={c.cx} cy={c.cy} r={c.r} fill="none" stroke={HALO_COLOR} strokeWidth={s.strokeWidth + HALO_EXTRA} />
++      {tip}
++      <circle cx={c.cx} cy={c.cy} r={c.r} fill="none" stroke={HALO_COLOR} strokeWidth={width + HALO_EXTRA} />
+       <circle
+         cx={c.cx}
+         cy={c.cy}
+         r={c.r}
+         fill="none"
+         stroke={color}
+-        strokeWidth={s.strokeWidth}
++        strokeWidth={width}
+         strokeDasharray={s.dash ?? undefined}
+       />
+       {s.icon && (
+@@ -68,15 +88,42 @@ function Mark({ mark, zoom }) {
+           {s.icon}
+         </text>
+       )}
++      {interactive && (
++        <circle
++          className="mark-hit"
++          cx={c.cx}
++          cy={c.cy}
++          r={c.r}
++          fill="none"
++          stroke="transparent"
++          strokeWidth={HIT_WIDTH}
++          pointerEvents="stroke"
++          onClick={(e) => {
++            e.stopPropagation()
++            onMarkClick(mark.id)
++          }}
++        />
++      )}
+     </g>
+   )
+ }
+ 
+-function MarksLayer({ marks, zoom, width, height }) {
++function MarksLayer({ marks, zoom, width, height, selectedId, onMarkClick, interactive }) {
++  // The selected row's mark is painted last among the marks (App draws the jump box above).
++  const ordered = drawOrder(marks)
++  const i = ordered.findIndex((m) => m.kind === 'row' && m.id === selectedId)
++  if (i >= 0) ordered.push(ordered.splice(i, 1)[0])
+   return (
+     <svg className="marks-layer" width={width} height={height} aria-label="Marks">
+-      {drawOrder(marks).map((m) => (
+-        <Mark key={m.id} mark={m} zoom={zoom} />
++      {ordered.map((m) => (
++        <Mark
++          key={m.id}
++          mark={m}
++          zoom={zoom}
++          selected={m.kind === 'row' && m.id === selectedId}
++          interactive={interactive}
++          onMarkClick={onMarkClick}
++        />
+       ))}
+     </svg>
+   )
+diff --git a/src/config/markStyles.js b/src/config/markStyles.js
+index 30a1e08..78dc56c 100644
+--- a/src/config/markStyles.js
++++ b/src/config/markStyles.js
+@@ -31,6 +31,13 @@ export const ICON_COLOR = '#101828'
+ // Diamond for additions: half-diagonal = ring r x this factor.
+ export const DIAMOND_FACTOR = 0.75
+ 
++// Invisible band along each ring / diamond that takes hover (and, for rows,
++// clicks): stroke width in screen px. The symbol inside stays click-through.
++export const HIT_WIDTH = 8
++
++// The selected row's mark: stroke and halo this much wider (screen px).
++export const SELECTED_EXTRA = 1.5
++
+ // Line style and icon per status. dash = SVG stroke-dasharray (null = solid).
+ export const STATUS_STYLES = {
+   undecided: { strokeWidth: 1.5, dash: null, icon: null },
+diff --git a/src/lib/marks.js b/src/lib/marks.js
+index 70528d1..2795d59 100644
+--- a/src/lib/marks.js
++++ b/src/lib/marks.js
+@@ -55,6 +55,13 @@ export function markLabel(m) {
+   return `${m.name}, ${m.type}, ${m.kind === 'added' ? 'Added by you' : m.status}`
+ }
+ 
++// Hover text of one mark: "E2 · Light fixture · 92% · accepted". An addition
++// has no confidence: "E2-NL · Light fixture · Added by you".
++export function markTooltip(m) {
++  if (m.kind === 'added') return `${m.name} · ${m.type} · Added by you`
++  return `${m.name} · ${m.type} · ${Math.round(m.confidence * 100)}% · ${m.status}`
++}
++
+ // SVG polygon points for an addition's diamond, in screen px. The centre comes
+ // from ringCircle (geometry.js); this only spreads the four corners around it.
+ export function diamondPoints({ cx, cy, r }) {

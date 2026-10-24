@@ -6,7 +6,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
-import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, typeCounts } from '../src/lib/marks.js'
+import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
 import { catalogIndex } from '../src/lib/edits.js'
 import { RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
@@ -156,6 +156,27 @@ test('diamondPoints is centred on the ringCircle centre at zoom 0.5, 1 and 2', (
     assert.ok(Math.abs(mx - p.left) <= 0.5, `x at zoom ${zoom}`)
     assert.ok(Math.abs(my - p.top) <= 0.5, `y at zoom ${zoom}`)
   }
+})
+
+console.log('markTooltip')
+
+test('markTooltip: accepted row shows name, type, confidence % and status', () => {
+  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-1')), 'E2 · Light fixture · 95% · accepted')
+})
+
+test('markTooltip: rejected and undecided rows', () => {
+  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-2')), 'Duplex receptacle · Receptacle · 80% · rejected')
+  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-4')), 'Occupancy sensor · Sensor · 40% · undecided')
+})
+
+test('markTooltip: a renamed row shows its new name and type', () => {
+  assert.equal(markTooltip(marks.find((m) => m.id === 'S1-3')), 'Single pole wall switch · Switch · 60% · undecided')
+})
+
+test('markTooltip: an addition says Added by you, no %', () => {
+  const t = markTooltip(marks.find((m) => m.id === 'ADD-1'))
+  assert.equal(t, 'E2-NL · Light fixture · Added by you')
+  assert.ok(!t.includes('%'))
 })
 
 console.log('markStyles')
