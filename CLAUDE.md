@@ -3,7 +3,7 @@
 ## Status
 - `main` and tag `study-v1` = the frozen study tool. The paper describes it. Never touch them.
 - The full product plan (all features, build order) is in `docs/product/PLAN.md`. Read it only if I ask.
-- NOW: **Feature 1 — All marks on** (flag `allMarks`). Current phase: **Phase 1**
+- NOW: **Feature 1 — All marks on** (flag `allMarks`). Current phase: **Phase 2**
   (update this line after each phase I confirm; show me the change first).
 
 ## Why this feature, and why first
@@ -40,8 +40,9 @@ If a task conflicts with a hard rule: stop and tell me.
 ## What to build (the spec)
 1. **All marks.** Every row of the current sheet gets a ring on the drawing at its x,y, at the same time.
    - Thin **ring**, not a filled box, so the symbol stays readable.
-   - Diameter **24 image px**, never smaller than **16 screen px**. (Some symbols are 18 px apart on
-     sheets 3 and 6; they must still show as two rings.)
+   - Diameter **24 image px**, never smaller than **16 screen px**. (Closest symbols: 12 px on
+     sheet 4, 17 on sheet 3, 18 on sheet 6. Rings may overlap but must still show as two rings;
+     Phase 7 checks S4-1/S4-29 by eye.)
 2. **Colour by type** (the 9 types in `src/config/catalog.json`). **Status by line style + small icon**,
    so colour is never the only signal:
    | Status | Look |
@@ -105,11 +106,34 @@ row click and mark click share it; `source` decides which event is logged).
 no toggle, no M key, today's dots for additions. Nothing else changes.
 
 **6. Design quality.**
-- Palette: 9 colours that are distinct from each other and from the blue jump box, each with contrast
-  ≥ 3:1 on white. Propose it in your plan (colour-blind safe, e.g. based on Okabe–Ito).
+- Palette (approved, Phase 1). Each colour ≥ 3:1 on white. ΔE = CIEDE2000; "CB" = worse of protan/deutan.
+  Every pair ≥ ΔE 16 in normal vision; every pair of types that share a sheet ≥ ΔE 13 in CB.
+  | Type | Hex | Contrast | ΔE from jump box `#2563eb` (normal / CB) |
+  |---|---|---|---|
+  | Light fixture | `#D55E00` | 3.87 | 53 / 60 |
+  | Receptacle | `#009E73` | 3.42 | 47 / 41 |
+  | Track light head | `#5A2DA5` | 8.92 | 20 / 12 |
+  | Panelboard | `#963C4B` | 6.90 | 36 / 34 |
+  | Sensor | `#F05A78` | 3.26 | 40 / 30 |
+  | Switch | `#5A4B00` | 8.60 | 59 / 58 |
+  | Exit sign | `#B478B4` | 3.34 | 27 / 12 |
+  | Ceiling fan | `#3C96D2` | 3.24 | 19 / 13 |
+  | Junction box | `#968700` | 3.64 | 66 / 61 |
+  | *Added diamond* (all additions) | `#344054` | 10.46 | — |
+  | *Rejected* (dashed ring) | `#667085` | 4.97 | — |
 - Every ring has an `aria-label` ("E2-NL, Light fixture, accepted"). Chips are real buttons.
 - Keep the study tool's calm look. Must work at 1366×768 and 1920×1080.
 - Performance: up to ~70 marks per sheet; panning and zooming must stay smooth at 200%.
+
+## Phase 1 decisions
+1. `App.jsx:34` comment reworded in Phase 2 (comment only), so the hard-rule-3 guard test passes.
+2. Rings may overlap; Phase 7 checks S4-1/S4-29 by eye.
+3. "List scrolls to row" is new code in Phase 4 (nothing scrolls the list today).
+4. Marks `useMemo` sits above the loading checks in `ReviewScreen` and uses `sheet?.items`.
+5. Rings ignore clicks while placing (Add missing), so the click reaches the drawing.
+6. Additions: `status: null`, tooltip "Added by you".
+7. Marks switch is its own component above the drawing; `ZoomableImage` untouched.
+8. Layout CSS in `App.css`; colours and line styles only in `markStyles.js`.
 
 ## Tests (plain Node, like the existing ones)
 New file `scripts/marks.test.js`, added to the `npm test` chain in `package.json`:
