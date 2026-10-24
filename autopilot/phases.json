@@ -1,0 +1,28 @@
+{
+  "2": {
+    "title": "Logic + tests",
+    "task": "ringCircle in src/lib/geometry.js; src/lib/marks.js (buildMarks, typeCounts, filterByType, drawOrder); src/config/markStyles.js (the approved palette and the status line styles/icons); scripts/marks.test.js with every test listed under Tests in CLAUDE.md, added to the npm test chain in package.json. Reword the comment at src/App.jsx:34 so no file in src/ mentions answer-key, baseline/ or handoff (Phase 1 decision 1). No React, no UI.",
+    "files": ["src/lib/geometry.js", "src/lib/marks.js", "src/config/markStyles.js", "scripts/marks.test.js", "package.json", "src/App.jsx"],
+    "commentOnly": ["src/App.jsx"]
+  },
+  "3": {
+    "title": "Draw the marks",
+    "task": "src/components/MarksLayer.jsx (one svg, React.memo, keyed by row id, aria-label per ring), wired into ZoomableImage's children(zoom) in App.jsx behind FEATURES.allMarks. Marks derived with useMemo above the loading checks (Phase 1 decision 4). Additions become diamonds when the flag is on; today's dots stay when it is off. Display only: no clicks, no tooltip yet.",
+    "files": ["src/components/MarksLayer.jsx", "src/App.jsx", "src/App.css", "src/config/markStyles.js", "src/lib/marks.js", "scripts/marks.test.js"]
+  },
+  "4": {
+    "title": "Mark <-> row link",
+    "task": "selectRow(id, source) in App.jsx shared by row click and mark click; mark click logs mark_clicked only; the list scrolls to the row (new code, Phase 1 decision 3); clicking a row highlights its mark; hover tooltip with name, type, confidence, status ('Added by you' for additions); rings ignore clicks while placing (Phase 1 decision 5).",
+    "files": ["src/App.jsx", "src/components/MarksLayer.jsx", "src/App.css", "src/config/markStyles.js", "src/lib/marks.js", "scripts/marks.test.js"]
+  },
+  "5": {
+    "title": "Type chips",
+    "task": "src/components/TypeChips.jsx (real buttons, counts) above the drawing; typeFilter state in App.jsx; filterByType applied to BOTH marks and list rows; type_filter_changed logged from the App.jsx handler.",
+    "files": ["src/components/TypeChips.jsx", "src/App.jsx", "src/App.css", "src/config/markStyles.js", "src/lib/marks.js", "scripts/marks.test.js"]
+  },
+  "6": {
+    "title": "Marks switch + M key",
+    "task": "src/components/MarksToggle.jsx above the drawing (Phase 1 decision 7); marksOn state in App.jsx; key M toggles, but does nothing while typing in an input, select or textarea; marks_toggled logged from the App.jsx handler.",
+    "files": ["src/components/MarksToggle.jsx", "src/App.jsx", "src/App.css", "src/config/markStyles.js", "src/lib/marks.js", "scripts/marks.test.js"]
+  }
+}

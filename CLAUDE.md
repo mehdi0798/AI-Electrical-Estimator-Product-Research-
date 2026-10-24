@@ -180,3 +180,13 @@ Tests: plain Node scripts in `scripts/*.test.js`, run with `npm test`.
 - When a phase is done: run `npm test`, tell me in simple words what changed, list the files,
   and tell me exactly what to click to check it.
 - Commit on `product` only after I confirm. Show me any change to this file before making it.
+
+## Autopilot mode (only when run by `node autopilot/run.mjs`)
+- Applies to Phases 2–6 only. Phase 7 and anything after it are always interactive.
+- "Wait for my OK" is replaced by: Codex reviews the plan, then the diff, and answers APPROVE or CHANGES. Max 2 fix rounds per step.
+- Never run git commit, push, checkout, reset or branch: the script does all git writes, one commit per phase, pushed to `product` only.
+- Touch only the files listed for the phase in `autopilot/phases.json` (Phase 2 includes `src/App.jsx`, comment at line 34 only). Anything else = stop.
+- The script updates the "Current phase" line in each phase commit; never edit CLAUDE.md yourself.
+- `npm test` and `npm run build` must both pass before the diff review.
+- `allMarks` stays `false` in every commit.
+- If unsure, or a hard rule would be bent: stop and say why (first line "BLOCKED:"). Never guess.
