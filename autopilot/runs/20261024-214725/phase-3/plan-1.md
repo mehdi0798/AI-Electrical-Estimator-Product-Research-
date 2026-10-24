@@ -1,0 +1,30 @@
+## Phase 3 plan: draw the marks (display only)
+
+- **`src/components/MarksLayer.jsx` (new):** a `React.memo` component that takes `{ marks, zoom }`. It draws one absolutely positioned `<svg className="marks-layer">` over the image, sized to the drawn image (`imageToScreen` of the natural size, passed in as `width` and `height` props). The svg has `pointer-events: none`. Each mark is a `<g key={m.id}>`, painted in `drawOrder(marks)` order.
+  - A row is a `<circle>` from `ringCircle({ x, y, zoom, diameter: RING_DIAMETER, minScreen: RING_MIN_SCREEN })`.
+  - Ring colour comes from `TYPE_COLORS[type]`; a rejected row uses `REJECTED_COLOR`.
+  - `strokeWidth` and the dash come from `STATUS_STYLES[status]`, and fill is `none`.
+  - A small ✓ or × goes at the ring's top-right.
+  - An addition is a diamond `<polygon>` in `ADDED_COLOR`.
+  - Every mark gets `role="img"` and an `aria-label` such as "E2-NL, Light fixture, accepted" (additions: "…, Added by you").
+  - No click or hover handlers in this phase; that is Phase 4.
+- **`src/lib/marks.js`:** two new pure helpers.
+  - `markLabel(mark)` returns the aria-label text.
+  - `diamondPoints({ cx, cy, r })` returns the polygon `points` string. This is screen-space only; the centre still comes from `ringCircle` (hard rule 4).
+- **`src/config/markStyles.js`:** add the remaining visual constants: the icon font size and offset, the white halo (stroke behind the ring so it reads on black linework), and the diamond half-size factor. All colours and line styles stay here (Phase 1 decision 8).
+- **`src/App.jsx` wiring, behind `FEATURES.allMarks`:**
+  - Import `MarksLayer`, `buildMarks` and `useMemo`.
+  - Add a `useMemo` above the `if (error)` / `if (!sheet)` checks in `ReviewScreen` (Phase 1 decision 4): `buildMarks({ items: sheet?.items ?? [], statuses, additions, edits, byName: CAT.byName })`, with deps `[sheet, statuses, additions, edits]`. It returns `[]` when the flag is off.
+  - No new state in this phase. `marksOn` and `typeFilter` come in Phases 5–6.
+- **`App.jsx`, inside `children(zoom)`:**
+  - Flag on: render `<MarksLayer>` first, then the draft pin and the jump box on top. The `map-dot` spans for additions are skipped, because the layer's diamonds replace them.
+  - Flag off: exactly today's markup.
+  - Marks render only once `analysed` is true, so the rings can't show the rows before the analysis animation does.
+  - The image size comes from `imgRef.current.naturalWidth/Height`, the same way `jumpBoxStyle` already gets it.
+- **`src/App.css`:** layout only. `.marks-layer { position:absolute; left:0; top:0; pointer-events:none; overflow:visible }`. No colours here.
+- **`scripts/marks.test.js`:** add tests for:
+  - `markLabel` on an accepted row, a rejected row and an addition.
+  - `diamondPoints` centred on the `ringCircle` centre at zoom 0.5, 1 and 2.
+  - `drawOrder` puts additions last and rejected rows first.
+  - The existing guard test still passes.
+- **Checks:** `npm test` and `npm run build` must both pass. `allMarks` stays `false` in `features.json`, which isn't touched. Nothing new is logged, since there are no new user actions in this phase.

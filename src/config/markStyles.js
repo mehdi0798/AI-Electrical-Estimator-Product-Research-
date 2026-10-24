@@ -20,6 +20,17 @@ export const REJECTED_COLOR = '#667085' // dashed ring
 export const RING_DIAMETER = 24 // image px
 export const RING_MIN_SCREEN = 16 // screen px
 
+// White halo drawn under every ring/diamond so it reads on black linework.
+export const HALO_COLOR = 'rgba(255, 255, 255, 0.9)'
+export const HALO_EXTRA = 2 // halo stroke = mark stroke + this (screen px)
+
+// Status icon (✓ / ×): font size in screen px, placed at the ring's top-right.
+export const ICON_SIZE = 10
+export const ICON_COLOR = '#101828'
+
+// Diamond for additions: half-diagonal = ring r x this factor.
+export const DIAMOND_FACTOR = 0.75
+
 // Line style and icon per status. dash = SVG stroke-dasharray (null = solid).
 export const STATUS_STYLES = {
   undecided: { strokeWidth: 1.5, dash: null, icon: null },

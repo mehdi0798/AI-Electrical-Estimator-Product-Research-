@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import CATALOG from './config/catalog.json'
 import FEATURES from './config/features.json'
@@ -7,6 +7,8 @@ import { nextAddId } from './lib/addIds'
 import { applyEdit, bidTotal as computeBid, catalogIndex, displayItem } from './lib/edits'
 import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
 import ZoomableImage from './ZoomableImage'
+import MarksLayer from './components/MarksLayer'
+import { buildMarks } from './lib/marks'
 import {
   clearSession,
   loadSession,
@@ -527,6 +529,16 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
     logEvent({ action: 'add_removed', item_id: id })
   }
 
+  // features.allMarks: one mark per row and per addition, derived from the state
+  // above (never copied). Above the loading checks, so hooks keep their order.
+  const marks = useMemo(
+    () =>
+      FEATURES.allMarks
+        ? buildMarks({ items: sheet?.items ?? [], statuses, additions, edits, byName: CAT.byName })
+        : [],
+    [sheet, statuses, additions, edits],
+  )
+
   if (error) {
     return <div className="state error">Could not load sheet: {error}</div>
   }
@@ -682,12 +694,24 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
           >
             {(zoom) => {
               const box = jumpBoxStyle(zoom)
+              const img = imgRef.current
+              const size = img?.naturalWidth
+                ? imageToScreen({ x: img.naturalWidth, y: img.naturalHeight, zoom })
+                : null
               return (
                 <>
-                  {/* Dots ONLY for participant-added items (Hard rule 3). */}
-                  {additions.map((a) => (
-                    <span key={a.id} className="map-dot" style={dotStyle(a, zoom)} />
-                  ))}
+                  {/* allMarks: every row's ring + additions' diamonds, after the
+                      analysis reveals the list. Otherwise today's addition dots. */}
+                  {FEATURES.allMarks ? (
+                    analysed && size && (
+                      <MarksLayer marks={marks} zoom={zoom} width={size.left} height={size.top} />
+                    )
+                  ) : (
+                    /* Dots ONLY for participant-added items (Hard rule 3). */
+                    additions.map((a) => (
+                      <span key={a.id} className="map-dot" style={dotStyle(a, zoom)} />
+                    ))
+                  )}
                   {draft && <span className="map-dot draft" style={dotStyle(draft, zoom)} />}
                   {/* Click-to-jump: at most one box, on the selected item only (Hard rule 3). */}
                   {box && <span className="jump-box" style={box} aria-hidden="true" />}

@@ -3,7 +3,7 @@
 ## Status
 - `main` and tag `study-v1` = the frozen study tool. The paper describes it. Never touch them.
 - The full product plan (all features, build order) is in `docs/product/PLAN.md`. Read it only if I ask.
-- NOW: **Feature 1 — All marks on** (flag `allMarks`). Current phase: **Phase 3**
+- NOW: **Feature 1 — All marks on** (flag `allMarks`). Current phase: **Phase 4**
   (update this line after each phase I confirm; show me the change first).
 
 ## Why this feature, and why first

@@ -306,6 +306,16 @@
   border-color: #f79009; /* the pin while the Add dialog is open */
 }
 
+/* All marks (features.allMarks): one svg over the drawing; colours live in
+   src/config/markStyles.js. */
+.marks-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
 /* Click-to-jump box (features.clickToJump): ONE box, selected item only. */
 .jump-box {
   position: absolute;

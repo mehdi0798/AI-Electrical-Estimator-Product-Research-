@@ -1,0 +1,17 @@
+{
+  "phase": "3",
+  "title": "Draw the marks",
+  "sessionId": "3ccbcfb2-a939-4562-a5a1-e60f95da1b46",
+  "planRounds": 0,
+  "diffRounds": 0,
+  "planFile": "autopilot/runs/20261024-214725/phase-3/plan-1.md",
+  "files": [
+    "scripts/marks.test.js",
+    "src/App.css",
+    "src/App.jsx",
+    "src/config/markStyles.js",
+    "src/lib/marks.js",
+    "src/components/MarksLayer.jsx"
+  ],
+  "report": "## Changed\n- `src/components/MarksLayer.jsx` (new): one drawing layer that puts a ring on every row and a diamond on every addition, all at once, positioned with `ringCircle`. Colour shows the type; line style plus a small ✓ or × shows the status. A white halo keeps each ring readable on black lines, and every mark has an aria-label. It only displays for now: clicks and hover come in Phase 4.\n- `src/App.jsx`: builds the marks with `useMemo` above the loading checks. With `allMarks` on, it draws `MarksLayer` under the draft pin and the jump box, and only after the analysis has revealed the list. With the flag off, it shows today's addition dots exactly as before.\n- `src/lib/marks.js`: adds `markLabel` (the aria-label text) and `diamondPoints` (the four corners of the addition diamond).\n- `src/config/markStyles.js`: adds the halo, icon size and colour, and diamond size settings.\n- `src/App.css`: adds position and size rules for the layer (`.marks-layer`, clicks pass through it). No colours.\n- `scripts/marks.test.js`: adds 3 tests: draw order (additions on top, rejected underneath), the aria-label text, and the diamond centring on its point at zoom 0.5, 1 and 2. `npm test` passes (the marks file shows 17 passed) and `npm run build` passes.\n\n## What to click\n1. To see anything, set `\"allMarks\": true` in `src/config/features.json` on your machine only. Don't commit that change.\n2. Run `npm run dev` and open the app. Go to the practice sheet, and click Analyse if that button appears.\n3. When the list appears, check that every row has a thin ring on its symbol, coloured by type.\n4. Accept a row: its ring gets thicker and shows a small ✓. Reject a row: its ring turns grey and dashed with a small ×, and stays visible.\n5. Click a row in the list: the blue jump box appears on top of that ring.\n6. Click **Add missing**, then click a spot on the drawing and confirm. A small dark diamond appears there instead of the old dot.\n7. Use Fit width, then zoom to 100% and 200%. The rings should stay on their symbols and never get smaller than about 16 px. Panning should stay smooth.\n8. Rename a row with Edit to a name of another type: its ring colour changes to the new type.\n9. Set `\"allMarks\": false` and reload. No rings appear, and additions show the old dots, like `study-v1`."
+}

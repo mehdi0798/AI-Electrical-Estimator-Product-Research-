@@ -50,6 +50,17 @@ export function filterByType(list, type) {
   return list.filter((m) => m.type === type)
 }
 
+// The aria-label of one mark: "E2-NL, Light fixture, accepted".
+export function markLabel(m) {
+  return `${m.name}, ${m.type}, ${m.kind === 'added' ? 'Added by you' : m.status}`
+}
+
+// SVG polygon points for an addition's diamond, in screen px. The centre comes
+// from ringCircle (geometry.js); this only spreads the four corners around it.
+export function diamondPoints({ cx, cy, r }) {
+  return `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`
+}
+
 // Paint order: rejected first (underneath), then undecided, accepted, added.
 const LAYER = { rejected: 0, undecided: 1, accepted: 2 }
 const layer = (m) => (m.kind === 'added' ? 3 : LAYER[m.status])

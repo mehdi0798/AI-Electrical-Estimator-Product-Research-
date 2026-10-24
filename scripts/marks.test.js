@@ -6,7 +6,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
-import { buildMarks, drawOrder, filterByType, typeCounts } from '../src/lib/marks.js'
+import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, typeCounts } from '../src/lib/marks.js'
 import { catalogIndex } from '../src/lib/edits.js'
 import { RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
@@ -128,6 +128,34 @@ test('drawOrder: rejected, undecided, accepted, added; input unchanged', () => {
   const before = marks.map((m) => m.id)
   assert.deepEqual(drawOrder(marks).map((m) => m.id), ['S1-2', 'S1-3', 'S1-4', 'S1-1', 'ADD-1'])
   assert.deepEqual(marks.map((m) => m.id), before)
+})
+
+test('drawOrder: additions last, rejected first', () => {
+  const order = drawOrder(marks)
+  assert.equal(order[0].status, 'rejected')
+  assert.equal(order[order.length - 1].kind, 'added')
+})
+
+console.log('markLabel / diamondPoints')
+
+test('markLabel: accepted row, rejected row, addition', () => {
+  assert.equal(markLabel(marks.find((m) => m.id === 'S1-1')), 'E2, Light fixture, accepted')
+  assert.equal(markLabel(marks.find((m) => m.id === 'S1-2')), 'Duplex receptacle, Receptacle, rejected')
+  assert.equal(markLabel(marks.find((m) => m.id === 'ADD-1')), 'E2-NL, Light fixture, Added by you')
+})
+
+test('diamondPoints is centred on the ringCircle centre at zoom 0.5, 1 and 2', () => {
+  for (const zoom of [0.5, 1, 2]) {
+    const a = additions[0]
+    const c = ringCircle({ x: a.x, y: a.y, zoom, diameter: RING_DIAMETER, minScreen: RING_MIN_SCREEN })
+    const pts = diamondPoints(c).split(' ').map((p) => p.split(',').map(Number))
+    assert.equal(pts.length, 4)
+    const mx = pts.reduce((s, p) => s + p[0], 0) / 4
+    const my = pts.reduce((s, p) => s + p[1], 0) / 4
+    const p = imageToScreen({ x: a.x, y: a.y, zoom })
+    assert.ok(Math.abs(mx - p.left) <= 0.5, `x at zoom ${zoom}`)
+    assert.ok(Math.abs(my - p.top) <= 0.5, `y at zoom ${zoom}`)
+  }
 })
 
 console.log('markStyles')
