@@ -9,7 +9,8 @@ import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
 import ZoomableImage from './ZoomableImage'
 import MarksLayer from './components/MarksLayer'
 import TypeChips from './components/TypeChips'
-import { buildMarks, filterByType, typeCounts } from './lib/marks'
+import MarksToggle from './components/MarksToggle'
+import { buildMarks, filterByType, isTypingTarget, typeCounts } from './lib/marks'
 import {
   clearSession,
   loadSession,
@@ -351,6 +352,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   // features.allMarks: the type chip chosen ('all' or a type); filters marks and
   // list rows together. Stays 'all' when the flag is off.
   const [typeFilter, setTypeFilter] = useState('all')
+  // features.allMarks: the marks switch (button + key M); off shows the bare drawing.
+  const [marksOn, setMarksOn] = useState(true)
 
   // --- Add missing item (step 3) ---
   // Placement mode and normal row-click/highlight are MUTUALLY EXCLUSIVE:
@@ -551,6 +554,30 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
   const selectRowRef = useRef(null)
   const onMarkClick = useCallback((id) => selectRowRef.current?.(id, 'mark'), [])
 
+  // features.allMarks: one marks_toggled per switch click or M press. Logged
+  // from the handler, NOT inside a state updater (StrictMode runs those twice).
+  const toggleMarks = () => {
+    const next = !marksOn
+    logEvent({ action: 'marks_toggled', new_value: next ? 'on' : 'off' })
+    setMarksOn(next)
+  }
+  const toggleMarksRef = useRef(null)
+  toggleMarksRef.current = toggleMarks
+  // Key M toggles the marks once the list is revealed; nothing while typing in
+  // an input, select or textarea, with a modifier held, or on key repeat.
+  const marksKeyActive = FEATURES.allMarks && analysis === 'done'
+  useEffect(() => {
+    if (!marksKeyActive) return
+    const onKey = (e) => {
+      if (e.key !== 'm' && e.key !== 'M') return
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
+      if (isTypingTarget(e.target)) return
+      toggleMarksRef.current?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [marksKeyActive])
+
   if (error) {
     return <div className="state error">Could not load sheet: {error}</div>
   }
@@ -704,7 +731,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
             legend panel below it (step 12) */}
         <section className="drawing-pane">
           {FEATURES.allMarks && analysed && (
-            <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
+            <div className="marks-toolbar">
+              <MarksToggle on={marksOn} onToggle={toggleMarks} />
+              <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
+            </div>
           )}
           <ZoomableImage
             ref={viewerRef}
@@ -740,9 +770,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
               return (
                 <>
                   {/* allMarks: every row's ring + additions' diamonds, after the
-                      analysis reveals the list. Otherwise today's addition dots. */}
+                      analysis reveals the list, unless the marks switch is off.
+                      Otherwise today's addition dots. */}
                   {FEATURES.allMarks ? (
-                    analysed && size && (
+                    analysed && marksOn && size && (
                       <MarksLayer
                         marks={shownMarks}
                         zoom={zoom}

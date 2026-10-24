@@ -1,0 +1,249 @@
+diff --git a/scripts/marks.test.js b/scripts/marks.test.js
+index 7195c3f..574c063 100644
+--- a/scripts/marks.test.js
++++ b/scripts/marks.test.js
+@@ -6,9 +6,18 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
+ import { join } from 'node:path'
+ import { fileURLToPath } from 'node:url'
+ import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
+-import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
++import {
++  buildMarks,
++  diamondPoints,
++  drawOrder,
++  filterByType,
++  isTypingTarget,
++  markLabel,
++  markTooltip,
++  typeCounts,
++} from '../src/lib/marks.js'
+ import { catalogIndex } from '../src/lib/edits.js'
+-import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
++import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TOGGLE_STYLE, TYPE_COLORS } from '../src/config/markStyles.js'
+ import CATALOG from '../src/config/catalog.json' with { type: 'json' }
+ 
+ let passed = 0
+@@ -220,6 +229,25 @@ test('CHIP_STYLE has every key the chips use', () => {
+   assert.ok(CHIP_STYLE.dotSize > 0)
+ })
+ 
++test('TOGGLE_STYLE has every key the marks switch uses', () => {
++  for (const state of ['on', 'off']) {
++    for (const key of ['background', 'border', 'text']) assert.ok(TOGGLE_STYLE[state][key], `${state}.${key}`)
++  }
++})
++
++console.log('M key')
++
++test('isTypingTarget: true for input, select, textarea and contentEditable', () => {
++  for (const tagName of ['INPUT', 'SELECT', 'TEXTAREA']) assert.equal(isTypingTarget({ tagName }), true, tagName)
++  assert.equal(isTypingTarget({ tagName: 'DIV', isContentEditable: true }), true)
++})
++
++test('isTypingTarget: false for button, div and null', () => {
++  assert.equal(isTypingTarget({ tagName: 'BUTTON' }), false)
++  assert.equal(isTypingTarget({ tagName: 'DIV', isContentEditable: false }), false)
++  assert.equal(isTypingTarget(null), false)
++})
++
+ console.log('guard (hard rule 3)')
+ 
+ test('no file in src/ mentions answer-key, baseline/ or handoff', () => {
+diff --git a/src/App.css b/src/App.css
+index e470d7d..0d7171a 100644
+--- a/src/App.css
++++ b/src/App.css
+@@ -323,14 +323,51 @@
+   cursor: default;
+ }
+ 
+-/* Type chips above the drawing (features.allMarks). Layout only; colours in
+-   src/config/markStyles.js. */
++/* Marks switch + type chips above the drawing (features.allMarks). Layout only;
++   colours in src/config/markStyles.js. */
++.marks-toolbar {
++  flex: 0 0 auto;
++  display: flex;
++  align-items: flex-start;
++  gap: var(--s2);
++}
++.marks-toggle {
++  flex: 0 0 auto;
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  padding: 2px 10px;
++  border: 1px solid;
++  border-radius: 6px;
++  font: inherit;
++  font-size: 12px;
++  line-height: 18px;
++  white-space: nowrap;
++  cursor: pointer;
++}
++.marks-toggle:focus-visible {
++  outline: 2px solid var(--accent);
++  outline-offset: 2px;
++}
++.marks-toggle kbd {
++  padding: 0 4px;
++  border: 1px solid currentColor;
++  border-radius: 3px;
++  font: inherit;
++  font-size: 11px;
++  line-height: 14px;
++  opacity: 0.8;
++}
+ .type-chips {
+   flex: 0 0 auto;
+   display: flex;
+   flex-wrap: wrap;
+   gap: var(--s1);
+ }
++.marks-toolbar .type-chips {
++  flex: 1 1 auto;
++  min-width: 0;
++}
+ .type-chip {
+   display: inline-flex;
+   align-items: center;
+diff --git a/src/App.jsx b/src/App.jsx
+index 5236071..f21c298 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -9,7 +9,8 @@ import { clientToImage, imageToScreen, jumpBoxRect } from './lib/geometry'
+ import ZoomableImage from './ZoomableImage'
+ import MarksLayer from './components/MarksLayer'
+ import TypeChips from './components/TypeChips'
+-import { buildMarks, filterByType, typeCounts } from './lib/marks'
++import MarksToggle from './components/MarksToggle'
++import { buildMarks, filterByType, isTypingTarget, typeCounts } from './lib/marks'
+ import {
+   clearSession,
+   loadSession,
+@@ -351,6 +352,8 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+   // features.allMarks: the type chip chosen ('all' or a type); filters marks and
+   // list rows together. Stays 'all' when the flag is off.
+   const [typeFilter, setTypeFilter] = useState('all')
++  // features.allMarks: the marks switch (button + key M); off shows the bare drawing.
++  const [marksOn, setMarksOn] = useState(true)
+ 
+   // --- Add missing item (step 3) ---
+   // Placement mode and normal row-click/highlight are MUTUALLY EXCLUSIVE:
+@@ -551,6 +554,30 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+   const selectRowRef = useRef(null)
+   const onMarkClick = useCallback((id) => selectRowRef.current?.(id, 'mark'), [])
+ 
++  // features.allMarks: one marks_toggled per switch click or M press. Logged
++  // from the handler, NOT inside a state updater (StrictMode runs those twice).
++  const toggleMarks = () => {
++    const next = !marksOn
++    logEvent({ action: 'marks_toggled', new_value: next ? 'on' : 'off' })
++    setMarksOn(next)
++  }
++  const toggleMarksRef = useRef(null)
++  toggleMarksRef.current = toggleMarks
++  // Key M toggles the marks once the list is revealed; nothing while typing in
++  // an input, select or textarea, with a modifier held, or on key repeat.
++  const marksKeyActive = FEATURES.allMarks && analysis === 'done'
++  useEffect(() => {
++    if (!marksKeyActive) return
++    const onKey = (e) => {
++      if (e.key !== 'm' && e.key !== 'M') return
++      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return
++      if (isTypingTarget(e.target)) return
++      toggleMarksRef.current?.()
++    }
++    window.addEventListener('keydown', onKey)
++    return () => window.removeEventListener('keydown', onKey)
++  }, [marksKeyActive])
++
+   if (error) {
+     return <div className="state error">Could not load sheet: {error}</div>
+   }
+@@ -704,7 +731,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+             legend panel below it (step 12) */}
+         <section className="drawing-pane">
+           {FEATURES.allMarks && analysed && (
+-            <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
++            <div className="marks-toolbar">
++              <MarksToggle on={marksOn} onToggle={toggleMarks} />
++              <TypeChips counts={counts} value={typeFilter} onChange={changeTypeFilter} />
++            </div>
+           )}
+           <ZoomableImage
+             ref={viewerRef}
+@@ -740,9 +770,10 @@ function ReviewScreen({ sheetId, headerPosition, onConfirmed, resumed = false })
+               return (
+                 <>
+                   {/* allMarks: every row's ring + additions' diamonds, after the
+-                      analysis reveals the list. Otherwise today's addition dots. */}
++                      analysis reveals the list, unless the marks switch is off.
++                      Otherwise today's addition dots. */}
+                   {FEATURES.allMarks ? (
+-                    analysed && size && (
++                    analysed && marksOn && size && (
+                       <MarksLayer
+                         marks={shownMarks}
+                         zoom={zoom}
+diff --git a/src/config/markStyles.js b/src/config/markStyles.js
+index 598086f..ac70d31 100644
+--- a/src/config/markStyles.js
++++ b/src/config/markStyles.js
+@@ -53,3 +53,10 @@ export const CHIP_STYLE = {
+   active: { background: '#344054', border: '#344054', text: '#ffffff' },
+   dotSize: 8,
+ }
++
++// Marks switch above the drawing: on (marks shown) and off colours, same calm
++// tones as the chips (text >= 4.5:1 on its background).
++export const TOGGLE_STYLE = {
++  on: { background: '#344054', border: '#344054', text: '#ffffff' },
++  off: { background: '#ffffff', border: '#d0d5dd', text: '#344054' },
++}
+diff --git a/src/lib/marks.js b/src/lib/marks.js
+index 426d0db..aaaf25f 100644
+--- a/src/lib/marks.js
++++ b/src/lib/marks.js
+@@ -76,3 +76,10 @@ const layer = (m) => (m.kind === 'added' ? 3 : LAYER[m.status])
+ export function drawOrder(marks) {
+   return [...marks].sort((a, b) => layer(a) - layer(b))
+ }
++
++// The M key toggles marks, but never while the user is typing in a field.
++export function isTypingTarget(el) {
++  if (!el) return false
++  if (el.isContentEditable) return true
++  return ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)
++}
+diff --git a/src/components/MarksToggle.jsx b/src/components/MarksToggle.jsx
+new file mode 100644
+index 0000000..6b3fb9a
+--- /dev/null
++++ b/src/components/MarksToggle.jsx
+@@ -0,0 +1,25 @@
++// All marks on (Feature 1, flag allMarks): the marks switch above the drawing.
++// Hides/shows every mark to see the bare drawing; key M does the same (App.jsx).
++// Presentational only: no state, no logging. Colours from markStyles.js.
++
++import { memo } from 'react'
++import { TOGGLE_STYLE } from '../config/markStyles'
++
++function MarksToggle({ on, onToggle }) {
++  const s = on ? TOGGLE_STYLE.on : TOGGLE_STYLE.off
++  return (
++    <button
++      type="button"
++      className="marks-toggle"
++      aria-pressed={on}
++      aria-keyshortcuts="M"
++      title="Show or hide all marks (M)"
++      onClick={onToggle}
++      style={{ background: s.background, borderColor: s.border, color: s.text }}
++    >
++      {on ? 'Marks on' : 'Marks off'} <kbd aria-hidden="true">M</kbd>
++    </button>
++  )
++}
++
++export default memo(MarksToggle)

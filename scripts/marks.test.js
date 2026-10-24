@@ -6,9 +6,18 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { imageToScreen, ringCircle } from '../src/lib/geometry.js'
-import { buildMarks, diamondPoints, drawOrder, filterByType, markLabel, markTooltip, typeCounts } from '../src/lib/marks.js'
+import {
+  buildMarks,
+  diamondPoints,
+  drawOrder,
+  filterByType,
+  isTypingTarget,
+  markLabel,
+  markTooltip,
+  typeCounts,
+} from '../src/lib/marks.js'
 import { catalogIndex } from '../src/lib/edits.js'
-import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TYPE_COLORS } from '../src/config/markStyles.js'
+import { CHIP_STYLE, RING_DIAMETER, RING_MIN_SCREEN, TOGGLE_STYLE, TYPE_COLORS } from '../src/config/markStyles.js'
 import CATALOG from '../src/config/catalog.json' with { type: 'json' }
 
 let passed = 0
@@ -218,6 +227,25 @@ test('CHIP_STYLE has every key the chips use', () => {
     for (const key of ['background', 'border', 'text']) assert.ok(CHIP_STYLE[state][key], `${state}.${key}`)
   }
   assert.ok(CHIP_STYLE.dotSize > 0)
+})
+
+test('TOGGLE_STYLE has every key the marks switch uses', () => {
+  for (const state of ['on', 'off']) {
+    for (const key of ['background', 'border', 'text']) assert.ok(TOGGLE_STYLE[state][key], `${state}.${key}`)
+  }
+})
+
+console.log('M key')
+
+test('isTypingTarget: true for input, select, textarea and contentEditable', () => {
+  for (const tagName of ['INPUT', 'SELECT', 'TEXTAREA']) assert.equal(isTypingTarget({ tagName }), true, tagName)
+  assert.equal(isTypingTarget({ tagName: 'DIV', isContentEditable: true }), true)
+})
+
+test('isTypingTarget: false for button, div and null', () => {
+  assert.equal(isTypingTarget({ tagName: 'BUTTON' }), false)
+  assert.equal(isTypingTarget({ tagName: 'DIV', isContentEditable: false }), false)
+  assert.equal(isTypingTarget(null), false)
 })
 
 console.log('guard (hard rule 3)')

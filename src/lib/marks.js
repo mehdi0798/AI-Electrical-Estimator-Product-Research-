@@ -76,3 +76,10 @@ const layer = (m) => (m.kind === 'added' ? 3 : LAYER[m.status])
 export function drawOrder(marks) {
   return [...marks].sort((a, b) => layer(a) - layer(b))
 }
+
+// The M key toggles marks, but never while the user is typing in a field.
+export function isTypingTarget(el) {
+  if (!el) return false
+  if (el.isContentEditable) return true
+  return ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)
+}

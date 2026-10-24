@@ -1,0 +1,17 @@
+{
+  "phase": "6",
+  "title": "Marks switch + M key",
+  "sessionId": "0a1fe898-567e-492f-bd39-1848ffa37d46",
+  "planRounds": 0,
+  "diffRounds": 0,
+  "planFile": "autopilot/runs/20261024-214725/phase-6/plan-1.md",
+  "files": [
+    "scripts/marks.test.js",
+    "src/App.css",
+    "src/App.jsx",
+    "src/config/markStyles.js",
+    "src/lib/marks.js",
+    "src/components/MarksToggle.jsx"
+  ],
+  "report": "## Changed\n- `src/components/MarksToggle.jsx` (new): the \"Marks on / Marks off\" button above the drawing, with an **M** key hint. It only shows the button and does no logging.\n- `src/App.jsx`: adds the `marksOn` state, which starts on. One handler logs `marks_toggled` (`on`/`off`) and flips the state. The **M** key toggles marks, except while you type in a field, hold Ctrl/Alt/Cmd, or hold the key down. The button sits in one row with the type chips. Switching off hides every ring and diamond, but the blue jump box and the draft pin stay.\n- `src/App.css`: layout for the new toolbar row (button on the left, chips wrapping beside it), the button's size and focus outline, and the M key hint.\n- `src/config/markStyles.js`: the on/off colours of the button (`TOGGLE_STYLE`), the same calm tones as the chips.\n- `src/lib/marks.js`: new `isTypingTarget(el)`, which tells whether a key was pressed inside an input, select, textarea or editable text.\n- `scripts/marks.test.js`: tests for `isTypingTarget` and `TOGGLE_STYLE`. `npm test` passes (28 marks tests, plus the existing ones) and `npm run build` succeeds. `allMarks` is still `false`.\n\n## What to click\n1. To see anything, set `\"allMarks\": true` in `src/config/features.json` on your machine only (don't commit it). Then run `npm run dev`.\n2. Start a session and open the practice sheet. Click **Analyse drawing** and wait for the list. A **Marks on [M]** button appears above the drawing, to the left of the type chips.\n3. Click **Marks on**. Every ring and diamond disappears and the button reads **Marks off**. Click it again and the marks come back.\n4. Click anywhere on the page that is not a text field, then press **M**. The marks hide. Press **M** again and they show.\n5. Click a row so the blue jump box shows, then press **M**. The rings hide but the blue box stays.\n6. Click **Add missing**, click the drawing, then open the item dropdown in the popover and type **m** there. The marks must not toggle. Do the same in the Edit dialog's dropdown.\n7. Pick a type chip such as **Receptacle**, switch marks off, then on again. Only that type's marks come back.\n8. Open the browser devtools (Application → Local Storage, the log queue). Each button click or **M** press adds exactly one `marks_toggled` event, with new_value `off` or `on`. Holding **M** down adds only one.\n9. Set `allMarks` back to `false` and reload. There is no button and pressing **M** does nothing."
+}

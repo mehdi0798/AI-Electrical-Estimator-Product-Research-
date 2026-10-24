@@ -53,3 +53,10 @@ export const CHIP_STYLE = {
   active: { background: '#344054', border: '#344054', text: '#ffffff' },
   dotSize: 8,
 }
+
+// Marks switch above the drawing: on (marks shown) and off colours, same calm
+// tones as the chips (text >= 4.5:1 on its background).
+export const TOGGLE_STYLE = {
+  on: { background: '#344054', border: '#344054', text: '#ffffff' },
+  off: { background: '#ffffff', border: '#d0d5dd', text: '#344054' },
+}

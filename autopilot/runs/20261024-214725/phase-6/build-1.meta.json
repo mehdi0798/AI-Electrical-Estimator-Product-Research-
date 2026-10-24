@@ -1,0 +1,20 @@
+{
+  "exit": 0,
+  "timedOut": false,
+  "is_error": false,
+  "subtype": "success",
+  "session_id": "0a1fe898-567e-492f-bd39-1848ffa37d46",
+  "num_turns": 24,
+  "duration_ms": 70105,
+  "total_cost_usd": 0.7157006,
+  "permission_denials": [
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_015GFjtyBTrZutMKt676e2jB",
+      "tool_input": {
+        "command": "cat >> src/lib/marks.js <<'EOF'\n\n// The M key toggles marks, but never while the user is typing in a field.\nexport function isTypingTarget(el) {\n  if (!el) return false\n  if (el.isContentEditable) return true\n  return ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)\n}\nEOF\ncat >> src/config/markStyles.js <<'EOF'\n\n// Marks switch above the drawing: on (marks shown) and off colours, same calm\n// tones as the chips (text >= 4.5:1 on its background).\nexport const TOGGLE_STYLE = {\n  on: { background: '#344054', border: '#344054', text: '#ffffff' },\n  off: { background: '#ffffff', border: '#d0d5dd', text: '#344054' },\n}\nEOF",
+        "description": "Append helper and toggle style"
+      }
+    }
+  ]
+}
